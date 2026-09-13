@@ -821,6 +821,7 @@ function deletePayment(paymentId, requestId=null){
     addAuditLog("Approved edit request", `Approved deletion requested by "${request?.requestedBy||"?"}"`);
   }
   saveData();
+  closeModal();
   render();
 }
 
