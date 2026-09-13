@@ -517,6 +517,8 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
 .brand-mark{ color:var(--ink); font-family:var(--font-sans); font-size:18px; }
 .brand-sub{ color:var(--text-dim); font-family:var(--font-sans); font-size:12px; letter-spacing:0; text-transform:none; }
 .sidebar-nav{ padding:14px 12px; gap:3px; }
+.sidebar-account-action{ padding:8px 12px 14px; border-bottom:1px solid var(--line); }
+.sidebar-account-action .btn{ justify-content:flex-start; padding-left:12px; }
 .nav-item{ position:relative; justify-content:flex-start; gap:10px; padding:10px 12px; color:var(--text-dim); border:0; border-radius:6px; font-size:13.5px; font-weight:500; }
 .nav-item::before{ width:18px; color:var(--text-dim); font-size:15px; text-align:center; }
 .nav-item[data-nav="dashboard"]::before{ content:"▦"; }
