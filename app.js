@@ -503,9 +503,6 @@ function renderAuditLog(){
    ========================================================= */
 function openModal(html){
   document.getElementById("modal-root").innerHTML = `<div class="modal-backdrop" id="modal-backdrop">${html}</div>`;
-  document.getElementById("modal-backdrop").addEventListener("click", (e)=>{
-    if(e.target.id === "modal-backdrop") closeModal();
-  });
 }
 function closeModal(){
   document.getElementById("modal-root").innerHTML = "";
