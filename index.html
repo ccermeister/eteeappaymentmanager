@@ -3,22 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ETEEAP Ledger — Collections Record</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<!-- LOGIN SCREEN -->
 <div id="login-screen" class="login-screen">
-  <div class="login-card">
-    <p class="login-eyebrow">Collections Record</p>
-    <h1 class="login-title">ETEEAP Ledger</h1>
-    <p class="login-sub">Sign in to open the book.</p>
+  <div class="login-rail" aria-hidden="true">
+    <p class="rail-kicker">ETEEAP / 2026</p>
+    <div class="rail-rule"></div>
+    <p class="rail-number">01</p>
+    <p class="rail-note">Registrar's<br>collections register</p>
+  </div>
+  <div class="login-sheet">
+    <header class="login-heading">
+      <p class="login-eyebrow">Daily collections record</p>
+      <h1 class="login-title">Open the ledger</h1>
+      <p class="login-sub">Sign in to continue to the ETEEAP payment register.</p>
+    </header>
+    <div class="login-rule"><span>AUTHORIZED USERS</span><span>ENTRY 01</span></div>
     <form id="login-form" autocomplete="off">
       <label class="field">
-        <span>Username</span>
+        <span>Account name</span>
         <input type="text" id="login-username" required autocomplete="username">
       </label>
       <label class="field">
@@ -26,11 +38,11 @@
         <input type="password" id="login-password" required autocomplete="current-password">
       </label>
       <p id="login-error" class="login-error" hidden>Username or password not recognized.</p>
-      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+      <button type="submit" class="btn btn-primary btn-block">Open register <span aria-hidden="true">→</span></button>
     </form>
+    <footer class="login-foot"><span>ETEEAP OFFICE</span><span>LOCAL RECORD / PRIVATE</span></footer>
   </div>
 </div>
-
 <script src="app.js"></script>
 </body>
 </html>
