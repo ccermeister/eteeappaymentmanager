@@ -17,9 +17,9 @@
   --white: #FFFFFF;
   --text: #232323;
   --text-dim: #6B6558;
-  --font-serif: "Source Serif 4", Georgia, serif;
-  --font-sans: "IBM Plex Sans", -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", monospace;
+  --font-serif: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --radius: 3px;
 }
 
@@ -244,9 +244,9 @@ table{ border-collapse: collapse; width:100%; }
   --white: #FFFFFF;
   --text: #263238;
   --text-dim: #627277;
-  --font-serif: "Source Serif 4", Georgia, serif;
-  --font-sans: "IBM Plex Sans", -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", monospace;
+  --font-serif: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --radius: 2px;
 }
 
