@@ -897,7 +897,9 @@ document.addEventListener("click", (e)=>{
 /* =========================================================
    AUTH
    ========================================================= */
-document.getElementById("login-form").addEventListener("submit", (e)=>{
+const loginForm = document.getElementById("login-form");
+if(loginForm){
+loginForm.addEventListener("submit", (e)=>{
   e.preventDefault();
   const username = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value;
@@ -910,27 +912,28 @@ document.getElementById("login-form").addEventListener("submit", (e)=>{
   errorEl.hidden = true;
   CURRENT_USER = user;
   setSession(user);
-  showApp();
+  window.location.href = "dashboard.html";
 });
+}
 
-document.getElementById("logout-btn").addEventListener("click", ()=>{
+const logoutButton = document.getElementById("logout-btn");
+if(logoutButton) logoutButton.addEventListener("click", ()=>{
   clearSession();
-  CURRENT_USER = null;
-  document.getElementById("app-shell").hidden = true;
-  document.getElementById("login-screen").hidden = false;
-  document.getElementById("login-form").reset();
+  window.location.href = "index.html";
 });
 
 function showApp(){
-  document.getElementById("login-screen").hidden = true;
-  document.getElementById("app-shell").hidden = false;
+  const appShell = document.getElementById("app-shell");
+  if(!appShell || !CURRENT_USER) return;
   STATE = { view: "dashboard", studentId: null, studentTab: "summary", studentSearch: "" };
   render();
 }
 
 /* ---------------- INIT ---------------- */
 (function init(){
-  if(CURRENT_USER){
+  if(CURRENT_USER && document.getElementById("app-shell")){
     showApp();
+  } else if(CURRENT_USER && loginForm){
+    window.location.href = "dashboard.html";
   }
 })();

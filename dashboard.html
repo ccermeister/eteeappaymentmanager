@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETEEAP Ledger — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app-shell" class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <p class="brand-mark">ETEEAP</p>
+      <p class="brand-sub">Ledger</p>
+    </div>
+    <nav id="sidebar-nav" class="sidebar-nav"></nav>
+    <div class="sidebar-bottom">
+      <div class="whoami">
+        <span id="whoami-name" class="whoami-name"></span>
+        <span id="whoami-role" class="whoami-role"></span>
+      </div>
+      <button id="logout-btn" class="btn btn-ghost btn-block">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h2 id="view-title">Dashboard</h2>
+      <div id="topbar-actions" class="topbar-actions"></div>
+    </header>
+    <div id="view-root" class="view-root"></div>
+  </main>
+</div>
+<div id="modal-root"></div>
+<script src="app.js"></script>
+</body>
+</html>
