@@ -1115,12 +1115,20 @@ loginForm.addEventListener("submit", async (e)=>{
 });
 }
 
-const logoutButton = document.getElementById("logout-btn");
-if(logoutButton) logoutButton.addEventListener("click", ()=>{
+async function signOut(){
+  document.querySelectorAll("#logout-btn, #topbar-logout").forEach(button=>{ button.disabled = true; });
+  if(supabaseClient){
+    const {error} = await supabaseClient.auth.signOut({ scope: "local" });
+    if(error) console.error("Could not sign out of Supabase.", error);
+  }
   clearSession();
-  if(supabaseClient) supabaseClient.auth.signOut();
-  window.location.href = "index.html";
-});
+  window.location.replace("index.html");
+}
+
+const logoutButton = document.getElementById("logout-btn");
+if(logoutButton) logoutButton.addEventListener("click", signOut);
+const topbarLogout = document.getElementById("topbar-logout");
+if(topbarLogout) topbarLogout.addEventListener("click", signOut);
 
 function showApp(){
   const appShell = document.getElementById("app-shell");
