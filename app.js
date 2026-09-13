@@ -424,6 +424,7 @@ function renderStudentDetail(studentId){
         <p class="idline">${peso(paid)} paid of ${peso(due)} total (${pct}%)</p>
       </div>
       <div class="topbar-actions">
+        ${STATE.studentTab === "history" ? `<button class="btn btn-ghost btn-sm" data-print-history="${student.id}" title="Print or save this history as a PDF">Print / Save PDF</button>` : ""}
         ${can("edit") ? `<button class="btn btn-ghost btn-sm" data-open-modal="edit-student" data-student-id="${student.id}">Edit profile</button>` : ""}
         ${can("delete") ? `<button class="btn btn-danger btn-sm" data-delete-student="${student.id}">Delete</button>` : ""}
       </div>
@@ -431,6 +432,47 @@ function renderStudentDetail(studentId){
     ${tabs}
     ${body}
   `;
+}
+
+function printStudentHistory(studentId){
+  const student = DB.students.find(s=>s.id===studentId);
+  if(!student) return;
+  const payments = activePayments()
+    .filter(p=>p.studentId===studentId)
+    .sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const total = payments.reduce((sum,p)=>sum+Number(p.amount),0);
+  const rows = payments.map(payment=>{
+    const payable = DB.payables.find(item=>item.id===payment.payableId);
+    return `<tr>
+      <td>${escapeHtml(fmtDate(payment.date))}</td>
+      <td>${escapeHtml(payable?.name || "(payable removed)")}</td>
+      <td class="amount">${escapeHtml(peso(payment.amount))}</td>
+      <td>${payment.method === "full" ? "Full" : "Partial"}</td>
+      <td>${escapeHtml(payment.recordedBy || "—")}</td>
+      <td>${escapeHtml(payment.note || "—")}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" class="empty">No payments recorded yet.</td></tr>`;
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+  if(!printWindow) return;
+  printWindow.document.write(`<!DOCTYPE html><html><head><title>Payment history - ${escapeHtml(student.name)}</title>
+    <style>
+      @page{size:A4;margin:16mm}
+      *{box-sizing:border-box}body{margin:0;padding:40px;color:#1D2129;font:13px Arial,sans-serif}
+      header{border-bottom:2px solid #35505E;padding-bottom:18px;margin-bottom:24px}
+      .eyebrow{color:#667085;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+      h1{font-size:25px;margin:0 0 6px}p{margin:4px 0;color:#667085}.summary{display:flex;gap:36px;margin:0 0 20px}.summary strong{display:block;color:#1D2129;font-size:18px;margin-top:4px}
+      table{border-collapse:collapse;width:100%}th{text-align:left;background:#F0F2F5;color:#667085;font-size:11px;font-weight:600;padding:10px;border-bottom:1px solid #D2D6DC}td{padding:11px 10px;border-bottom:1px solid #E4E6EA}td.amount{font-weight:600;text-align:right}.empty{text-align:center;color:#667085;padding:30px}
+      @media print{body{padding:0}}
+    </style></head><body>
+    <header><p class="eyebrow">ETEEAP student collections</p><h1>${escapeHtml(student.name)}</h1><p>${escapeHtml(student.program || "No program on file")}</p></header>
+    <div class="summary"><div>Total payments<strong>${payments.length}</strong></div><div>Total collected<strong>${escapeHtml(peso(total))}</strong></div></div>
+    <table><thead><tr><th>Date</th><th>Payable</th><th>Amount</th><th>Type</th><th>Recorded by</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table>
+    </body></html>`);
+  printWindow.document.close();
+  printWindow.addEventListener("load", ()=>{
+    printWindow.focus();
+    printWindow.print();
+  });
 }
 
 /* =========================================================
@@ -916,6 +958,9 @@ function attachViewListeners(){
   });
   document.querySelectorAll("[data-open-student]").forEach(el=>{
     el.addEventListener("click", ()=> setView("student-detail", { studentId: el.dataset.openStudent, studentTab: "summary" }));
+  });
+  document.querySelectorAll("[data-print-history]").forEach(el=>{
+    el.addEventListener("click", ()=> printStudentHistory(el.dataset.printHistory));
   });
   document.querySelectorAll("[data-goto-payable]").forEach(el=>{
     el.addEventListener("click", ()=> setView("payables"));

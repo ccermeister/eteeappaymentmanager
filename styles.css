@@ -545,10 +545,14 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
 .topbar{ padding:20px 32px 16px; background:var(--white); border-bottom:1px solid var(--line); }
 .topbar h2{ color:var(--text); font-size:22px; }
 .view-root{ padding:24px 32px 48px; max-width:1280px; }
+.back-link{ display:inline-flex; align-items:center; width:max-content; margin-bottom:14px; padding:8px 12px; border:1px solid var(--forest); border-radius:6px; background:var(--forest-bg); color:var(--forest); font-size:12px; font-weight:600; }
+.back-link:hover{ background:#DCEBE1; color:#326D54; text-decoration:none; }
 
 .btn{ min-height:36px; border-radius:6px; font-size:13px; font-weight:600; }
 .btn-primary,.btn-brass{ background:var(--ink); border-color:var(--ink); color:var(--white); }
 .btn-primary:hover,.btn-brass:hover{ background:var(--ink-light); border-color:var(--ink-light); color:var(--white); }
+.btn[data-print-history]{ background:var(--forest); border-color:var(--forest); color:var(--white); }
+.btn[data-print-history]:hover{ background:#326D54; border-color:#326D54; color:var(--white); }
 .btn-ghost{ background:var(--white); color:var(--ink); border-color:var(--line-strong); }
 .btn-ghost:hover{ background:var(--paper-dim); }
 .btn-danger{ color:var(--rust); border-color:#D9AAA1; background:var(--white); }
