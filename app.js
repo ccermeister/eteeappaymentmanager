@@ -4,16 +4,12 @@
    localStorage. No server, no external accounts involved.
    ========================================================= */
 
-/* ---------------- ACCOUNTS ---------------- */
-const USERS = [
-  { username: "christian",      password: "cervantes", role: "admin",     display: "Christian" },
-  { username: "eteeapofficer",  password: "ETEEAP2026", role: "treasurer", display: "ETEEAP Officer" },
-  { username: "eteeap",         password: "eteeap",     role: "viewer",    display: "Viewer" },
-];
-
 const STORAGE_KEY = "eteeapLedgerData_v1";
 const SESSION_KEY = "eteeapLedgerSession_v1";
 const USER_SETTINGS_KEY = "eteeapLedgerUserSettings_v1";
+const supabaseClient = window.supabase && window.SUPABASE_CONFIG
+  ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.publishableKey)
+  : null;
 
 function loadUserSettings(){
   try{ return JSON.parse(localStorage.getItem(USER_SETTINGS_KEY)) || {}; }
@@ -55,6 +51,26 @@ function loadData(){
 
 function saveData(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+  if(supabaseClient && CURRENT_USER?.id){
+    supabaseClient.from("ledger_state").upsert({
+      id: 1,
+      data: DB,
+      updated_by: CURRENT_USER.id,
+      updated_at: new Date().toISOString(),
+    }).then(({error})=>{
+      if(error) console.error("Could not save shared ledger data.", error);
+    });
+  }
+}
+
+async function loadSharedData(){
+  if(!supabaseClient || !CURRENT_USER?.id) return;
+  const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).maybeSingle();
+  if(error){
+    console.error("Could not load shared ledger data.", error);
+    return;
+  }
+  if(data?.data) DB = Object.assign(defaultData(), data.data);
 }
 
 let DB = loadData();
@@ -1061,20 +1077,40 @@ document.addEventListener("click", (e)=>{
    ========================================================= */
 const loginForm = document.getElementById("login-form");
 if(loginForm){
-loginForm.addEventListener("submit", (e)=>{
+loginForm.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const username = document.getElementById("login-username").value.trim();
+  const email = document.getElementById("login-username").value.trim();
   const password = document.getElementById("login-password").value;
-  const user = USERS.find(u=>u.username===username && u.password===password);
   const errorEl = document.getElementById("login-error");
-  if(!user){
+  if(!supabaseClient){
+    errorEl.textContent = "Supabase is not configured.";
+    errorEl.hidden = false;
+    return;
+  }
+  const {data, error} = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error || !data.user){
+    errorEl.textContent = error?.message || "Email or password not recognized.";
+    errorEl.hidden = false;
+    return;
+  }
+  const role = data.user.app_metadata?.role;
+  if(!["admin","treasurer","viewer"].includes(role)){
+    await supabaseClient.auth.signOut();
+    errorEl.textContent = "This account has no ledger role assigned.";
     errorEl.hidden = false;
     return;
   }
   errorEl.hidden = true;
-  CURRENT_USER = user;
+  CURRENT_USER = {
+    id: data.user.id,
+    username: data.user.email,
+    email: data.user.email,
+    password: "",
+    role,
+    display: data.user.app_metadata?.display || data.user.email,
+  };
   applyUserSettings(CURRENT_USER);
-  setSession(user);
+  setSession(CURRENT_USER);
   window.location.href = "dashboard.html";
 });
 }
@@ -1082,6 +1118,7 @@ loginForm.addEventListener("submit", (e)=>{
 const logoutButton = document.getElementById("logout-btn");
 if(logoutButton) logoutButton.addEventListener("click", ()=>{
   clearSession();
+  if(supabaseClient) supabaseClient.auth.signOut();
   window.location.href = "index.html";
 });
 
@@ -1093,8 +1130,29 @@ function showApp(){
 }
 
 /* ---------------- INIT ---------------- */
-(function init(){
+(async function init(){
+  if(supabaseClient){
+    const {data} = await supabaseClient.auth.getSession();
+    const user = data.session?.user;
+    if(user){
+      const role = user.app_metadata?.role;
+      CURRENT_USER = {
+        id: user.id,
+        username: user.email,
+        email: user.email,
+        password: "",
+        role,
+        display: user.app_metadata?.display || user.email,
+      };
+      applyUserSettings(CURRENT_USER);
+      setSession(CURRENT_USER);
+    } else {
+      CURRENT_USER = null;
+      clearSession();
+    }
+  }
   if(CURRENT_USER && document.getElementById("app-shell")){
+    await loadSharedData();
     showApp();
   } else if(CURRENT_USER && loginForm){
     window.location.href = "dashboard.html";
