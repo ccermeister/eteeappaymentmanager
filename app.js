@@ -686,7 +686,7 @@ function modalRecordPayment(studentId, payableId){
   });
 }
 
-function modalEditPayment(paymentId){
+function modalEditPayment(paymentId, requestId=null){
   const payment = DB.payments.find(p=>p.id===paymentId);
   if(!payment) return;
   const payable = DB.payables.find(p=>p.id===payment.payableId);
@@ -714,6 +714,11 @@ function modalEditPayment(paymentId){
     const paidNow = paidAmount(payment.studentId, payment.payableId);
     payment.method = payable && paidNow >= payable.amount ? "full" : "partial";
     addAuditLog("Edited payment", `Changed payment from ${before} to ${peso(payment.amount)} on ${fmtDate(payment.date)}`);
+    if(requestId){
+      const request = DB.editRequests.find(r=>r.id===requestId);
+      if(request) request.status = "approved";
+      addAuditLog("Approved edit request", `Approved correction requested by "${request?.requestedBy||"?"}"`);
+    }
     saveData();
     closeModal();
     render();
@@ -770,8 +775,8 @@ function modalReviewRequest(requestId){
       <div class="modal-foot" style="justify-content:space-between;">
         <button type="button" class="btn btn-ghost" data-close-modal>Close</button>
         <div style="display:flex;gap:10px;">
-          ${payment ? `<button class="btn btn-ghost" data-resolve-request="${req.id}" data-then-edit="${payment.id}">Edit payment</button>` : ""}
-          ${payment ? `<button class="btn btn-danger" data-resolve-request="${req.id}" data-then-delete="${payment.id}">Delete payment</button>` : ""}
+          ${payment ? `<button class="btn btn-ghost" data-approve-edit="${req.id}" data-payment-id="${payment.id}">Edit payment</button>` : ""}
+          ${payment ? `<button class="btn btn-danger" data-approve-delete="${req.id}" data-payment-id="${payment.id}">Delete payment</button>` : ""}
           <button class="btn btn-brass" data-resolve-request="${req.id}">Dismiss request</button>
         </div>
       </div>
@@ -802,7 +807,7 @@ function deletePayable(payableId){
   saveData();
   setView("payables");
 }
-function deletePayment(paymentId){
+function deletePayment(paymentId, requestId=null){
   const payment = DB.payments.find(p=>p.id===paymentId);
   if(!payment) return;
   if(!confirm("Delete this payment record? This cannot be undone.")) return;
@@ -810,6 +815,11 @@ function deletePayment(paymentId){
   const payable = DB.payables.find(p=>p.id===payment.payableId);
   DB.payments = DB.payments.filter(p=>p.id!==paymentId);
   addAuditLog("Deleted payment", `Removed ${peso(payment.amount)} payment from "${student?.name||"?"}" for "${payable?.name||"?"}"`);
+  if(requestId){
+    const request = DB.editRequests.find(r=>r.id===requestId);
+    if(request) request.status = "approved";
+    addAuditLog("Approved edit request", `Approved deletion requested by "${request?.requestedBy||"?"}"`);
+  }
   saveData();
   render();
 }
@@ -851,8 +861,14 @@ function attachViewListeners(){
   document.querySelectorAll("[data-edit-payment]").forEach(el=>{
     el.addEventListener("click", ()=> modalEditPayment(el.dataset.editPayment));
   });
+  document.querySelectorAll("[data-approve-edit]").forEach(el=>{
+    el.addEventListener("click", ()=> modalEditPayment(el.dataset.paymentId, el.dataset.approveEdit));
+  });
   document.querySelectorAll("[data-delete-payment]").forEach(el=>{
     el.addEventListener("click", ()=> deletePayment(el.dataset.deletePayment));
+  });
+  document.querySelectorAll("[data-approve-delete]").forEach(el=>{
+    el.addEventListener("click", ()=> deletePayment(el.dataset.paymentId, el.dataset.approveDelete));
   });
   document.querySelectorAll("[data-request-edit]").forEach(el=>{
     el.addEventListener("click", ()=> modalRequestEdit(el.dataset.requestEdit));
@@ -878,20 +894,31 @@ function searchBox2Focus(){
   if(el){ const val = el.value; el.focus(); el.setSelectionRange(val.length, val.length); }
 }
 
-// Delegated handler for resolve-request buttons (rendered inside dynamic modal)
+// Delegated handlers for request actions rendered inside the dynamic review modal.
 document.addEventListener("click", (e)=>{
+  const approveEdit = e.target.closest("[data-approve-edit]");
+  const approveDelete = e.target.closest("[data-approve-delete]");
   const btn = e.target.closest("[data-resolve-request]");
+  if(CURRENT_USER?.role !== "admin") return;
+
+  if(approveEdit){
+    closeModal();
+    modalEditPayment(approveEdit.dataset.paymentId, approveEdit.dataset.approveEdit);
+    return;
+  }
+  if(approveDelete){
+    deletePayment(approveDelete.dataset.paymentId, approveDelete.dataset.approveDelete);
+    return;
+  }
   if(!btn) return;
   const reqId = btn.dataset.resolveRequest;
   const req = DB.editRequests.find(r=>r.id===reqId);
   if(!req) return;
-  req.status = "resolved";
-  addAuditLog("Resolved edit request", `Marked request from "${req.requestedBy}" as resolved`);
+  req.status = "dismissed";
+  addAuditLog("Dismissed edit request", `Dismissed request from "${req.requestedBy}"`);
   saveData();
   closeModal();
-  if(btn.dataset.thenEdit){ modalEditPayment(btn.dataset.thenEdit); }
-  else if(btn.dataset.thenDelete){ deletePayment(btn.dataset.thenDelete); }
-  else { render(); }
+  render();
 });
 
 /* =========================================================
