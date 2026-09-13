@@ -18,10 +18,14 @@
       <p class="brand-sub">Ledger</p>
     </div>
     <nav id="sidebar-nav" class="sidebar-nav"></nav>
-    <div class="sidebar-bottom">
-      <div class="whoami">
-        <span id="whoami-name" class="whoami-name"></span>
+      <div class="account-summary">
+        <span id="whoami-avatar" class="account-avatar" aria-hidden="true"></span>
+        <div class="whoami">
+          <span id="whoami-name" class="whoami-name"></span>
+          <span id="whoami-role" class="whoami-role"></span>
+        </div>
         <span id="whoami-role" class="whoami-role"></span>
+      <button id="account-settings-action" class="btn btn-ghost btn-block" data-open-modal="user-settings">Account settings</button>
       </div>
       <button id="logout-btn" class="btn btn-ghost btn-block">Sign out</button>
     </div>

@@ -13,6 +13,28 @@ const USERS = [
 
 const STORAGE_KEY = "eteeapLedgerData_v1";
 const SESSION_KEY = "eteeapLedgerSession_v1";
+const USER_SETTINGS_KEY = "eteeapLedgerUserSettings_v1";
+
+function loadUserSettings(){
+  try{ return JSON.parse(localStorage.getItem(USER_SETTINGS_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function saveUserSettings(){
+  localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(USER_SETTINGS));
+}
+function applyUserSettings(user){
+  if(!user) return;
+  const profile = USER_SETTINGS[user.username];
+  if(profile?.display) user.display = profile.display;
+  if(profile?.avatar) user.avatar = profile.avatar;
+}
+function avatarMarkup(user){
+  const initials = String(user.display || user.username || "?")
+    .split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
+  return user.avatar
+    ? `<img src="${escapeHtml(user.avatar)}" alt="">`
+    : `<span>${escapeHtml(initials)}</span>`;
+}
 
 /* ---------------- DATA LAYER ---------------- */
 function defaultData(){
@@ -36,6 +58,7 @@ function saveData(){
 }
 
 let DB = loadData();
+let USER_SETTINGS = loadUserSettings();
 
 function genId(prefix){
   return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -53,6 +76,7 @@ function clearSession(){
 }
 
 let CURRENT_USER = getSession();
+applyUserSettings(CURRENT_USER);
 
 /* ---------------- APP STATE ---------------- */
 let STATE = {
@@ -157,8 +181,8 @@ function addAuditLog(action, details){
 function can(action){
   const role = CURRENT_USER?.role;
   const perms = {
-    admin:     ["create","edit","delete","pay","approve","viewAudit"],
-    treasurer: ["create","edit","pay","requestEdit"],
+    admin:     ["create","edit","delete","pay","approve","viewAudit","manageSettings"],
+    treasurer: ["create","edit","pay","requestEdit","manageSettings"],
     viewer:    [],
   };
   return (perms[role]||[]).includes(action);
@@ -178,6 +202,10 @@ const NAV_ITEMS = [
 function renderShell(){
   document.getElementById("whoami-name").textContent = CURRENT_USER.display;
   document.getElementById("whoami-role").textContent = CURRENT_USER.role;
+  const avatar = document.getElementById("whoami-avatar");
+  if(avatar) avatar.innerHTML = avatarMarkup(CURRENT_USER);
+  const accountAction = document.getElementById("account-settings-action");
+  if(accountAction) accountAction.hidden = !can("manageSettings");
 
   const nav = document.getElementById("sidebar-nav");
   nav.innerHTML = NAV_ITEMS.filter(i=>i.roles.includes(CURRENT_USER.role)).map(item=>{
@@ -506,6 +534,63 @@ function openModal(html){
 }
 function closeModal(){
   document.getElementById("modal-root").innerHTML = "";
+}
+
+function modalUserSettings(){
+  if(!can("manageSettings")) return;
+  openModal(`
+    <div class="modal">
+      <div class="modal-head"><h3>Account settings</h3><button class="modal-close" data-close-modal>&times;</button></div>
+      <div class="settings-profile-preview">
+        <span id="settings-avatar-preview" class="account-avatar account-avatar-large" aria-hidden="true">${avatarMarkup(CURRENT_USER)}</span>
+        <div><strong>${escapeHtml(CURRENT_USER.username)}</strong><span>${escapeHtml(CURRENT_USER.role)}</span></div>
+      </div>
+      <form id="form-user-settings">
+        <label class="field"><span>Display name</span><input type="text" id="settings-display-name" value="${escapeHtml(CURRENT_USER.display)}" maxlength="80" required></label>
+        <label class="field"><span>Display picture</span><input type="file" id="settings-avatar" accept="image/png,image/jpeg,image/webp"></label>
+        <p class="hint" style="display:block;margin-top:-8px;margin-bottom:14px;">Your picture is saved only in this browser.</p>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save settings</button>
+        </div>
+      </form>
+    </div>
+  `);
+  const avatarInput = document.getElementById("settings-avatar");
+  avatarInput.addEventListener("change", ()=>{
+    const file = avatarInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      document.getElementById("settings-avatar-preview").innerHTML = `<img src="${escapeHtml(reader.result)}" alt="">`;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("form-user-settings").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const display = document.getElementById("settings-display-name").value.trim();
+    if(!display) return;
+    const profile = USER_SETTINGS[CURRENT_USER.username] || {};
+    const finish = avatar=>{
+      USER_SETTINGS[CURRENT_USER.username] = { display, avatar: avatar || profile.avatar || null };
+      CURRENT_USER.display = display;
+      CURRENT_USER.avatar = USER_SETTINGS[CURRENT_USER.username].avatar;
+      saveUserSettings();
+      setSession(CURRENT_USER);
+      addAuditLog("Updated account settings", `Updated profile for "${CURRENT_USER.username}"`);
+      closeModal();
+      render();
+    };
+    const file = avatarInput.files[0];
+    if(!file){ finish(null); return; }
+    if(file.size > 2 * 1024 * 1024){
+      alert("Please choose an image smaller than 2 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ()=>finish(reader.result);
+    reader.readAsDataURL(file);
+  });
 }
 
 function modalAddStudent(){
@@ -851,6 +936,7 @@ function attachViewListeners(){
       if(kind === "edit-student") modalEditStudent(el.dataset.studentId);
       if(kind === "add-payable") modalAddPayable();
       if(kind === "edit-payable") modalEditPayable(el.dataset.payableId);
+      if(kind === "user-settings") modalUserSettings();
     });
   });
   document.querySelectorAll("[data-record-payment]").forEach(el=>{
@@ -942,6 +1028,7 @@ loginForm.addEventListener("submit", (e)=>{
   }
   errorEl.hidden = true;
   CURRENT_USER = user;
+  applyUserSettings(CURRENT_USER);
   setSession(user);
   window.location.href = "dashboard.html";
 });
