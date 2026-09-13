@@ -227,23 +227,23 @@ table{ border-collapse: collapse; width:100%; }
 
 /* ============ REGISTER REDESIGN ============ */
 :root{
-  --ink: #17343B;
-  --ink-light: #2D5660;
-  --paper: #F3F6F3;
-  --paper-dim: #E4ECEA;
-  --brass: #C4933D;
-  --brass-dark: #956D25;
-  --forest: #3D6D5C;
-  --forest-bg: #DFEBE5;
-  --rust: #A3483E;
-  --rust-bg: #F3E4E1;
-  --amber: #A87425;
-  --amber-bg: #F3EAD3;
-  --line: #C5D1CE;
-  --line-strong: #9EAFAB;
+  --ink: #294A46;
+  --ink-light: #426862;
+  --paper: #F4F7F2;
+  --paper-dim: #E7EFE8;
+  --brass: #B6A269;
+  --brass-dark: #8D7C4D;
+  --forest: #647F6E;
+  --forest-bg: #E3ECE5;
+  --rust: #987772;
+  --rust-bg: #F0E7E4;
+  --amber: #9A8559;
+  --amber-bg: #F0EBDC;
+  --line: #CFD9D0;
+  --line-strong: #AEBDB2;
   --white: #FFFFFF;
-  --text: #263238;
-  --text-dim: #627277;
+  --text: #394742;
+  --text-dim: #6C7972;
   --font-serif: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -252,8 +252,10 @@ table{ border-collapse: collapse; width:100%; }
 
 body{
   background-color: var(--paper);
-  background-image: linear-gradient(rgba(23,52,59,.035) 1px, transparent 1px);
-  background-size: 100% 30px;
+  background-image:
+    linear-gradient(120deg, rgba(204,225,210,.34), rgba(244,247,242,0) 54%, rgba(219,229,215,.3)),
+    linear-gradient(rgba(41,74,70,.035) 1px, transparent 1px);
+  background-size: auto, 100% 30px;
 }
 
 /* The login screen is an unframed register page, not a product sign-in card. */
@@ -265,11 +267,9 @@ body{
   align-content:center;
   gap:clamp(28px, 7vw, 100px);
   padding:48px 28px;
-  background-color:var(--ink);
-  background-image:linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size:56px 100%;
+  background:linear-gradient(135deg, #D8E7DC 0%, #EEF3EB 52%, #DCE8DF 100%);
 }
-.login-rail{ color:var(--paper); padding-top:8px; }
+.login-rail{ color:var(--ink); padding-top:8px; }
 .rail-kicker,.rail-note,.login-rule,.login-foot{
   font-family:var(--font-mono);
   font-size:10px;
@@ -277,8 +277,8 @@ body{
   line-height:1.6;
   text-transform:uppercase;
 }
-.rail-kicker{ color:#AFC2C0; margin:0 0 22px; }
-.rail-rule{ width:100%; border-top:1px solid rgba(243,246,243,.32); }
+.rail-kicker{ color:var(--text-dim); margin:0 0 22px; }
+.rail-rule{ width:100%; border-top:1px solid rgba(41,74,70,.25); }
 .rail-number{
   font-family:var(--font-serif);
   font-size:clamp(58px, 9vw, 108px);
@@ -286,7 +286,7 @@ body{
   color:var(--brass);
   margin:22px 0 28px;
 }
-.rail-note{ color:#AFC2C0; }
+.rail-note{ color:var(--text-dim); }
 .login-sheet{
   align-self:center;
   background:var(--paper);
@@ -313,13 +313,13 @@ body{
 .login-sheet .field span{ color:var(--ink); font-family:var(--font-mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; }
 .login-sheet .field input{ border:0; border-bottom:1px solid var(--line-strong); border-radius:0; background:transparent; padding:11px 0; }
 .login-sheet .field input:focus{ outline:0; border-bottom:2px solid var(--brass); }
-.login-sheet .btn-primary{ background:var(--ink); border-color:var(--ink); justify-content:space-between; padding:13px 15px; }
+.login-sheet .btn-primary{ background:linear-gradient(100deg, #426862, #58766A); border-color:#426862; justify-content:space-between; padding:13px 15px; }
 .login-sheet .btn-primary span{ color:var(--brass); font-size:19px; line-height:0; }
 .login-foot{ display:flex; justify-content:space-between; color:var(--text-dim); border-top:1px solid var(--line); margin-top:30px; padding-top:14px; }
 
 /* The shell uses the visual grammar of a bound register. */
 .app-shell{ background:var(--paper); }
-.sidebar{ width:242px; background:var(--ink); border-right:6px solid var(--brass); }
+.sidebar{ width:242px; background:linear-gradient(180deg, #315750 0%, #496A60 100%); border-right:6px solid var(--brass); }
 .sidebar-top{ padding:32px 26px 24px; border-bottom:1px solid rgba(243,246,243,.2); }
 .brand-mark{ font-size:25px; letter-spacing:.01em; }
 .brand-sub{ color:var(--brass); font-family:var(--font-mono); font-size:10px; text-transform:uppercase; }
@@ -337,7 +337,7 @@ body{
 .view-root{ padding:32px 42px 64px; max-width:1280px; }
 
 .btn{ border-radius:0; letter-spacing:.01em; }
-.btn-brass{ background:var(--brass); border-color:var(--brass); color:var(--ink); }
+.btn-brass{ background:linear-gradient(100deg, #B6A269, #C7B98F); border-color:var(--brass); color:var(--ink); }
 .btn-brass:hover{ background:var(--brass-dark); border-color:var(--brass-dark); color:var(--white); }
 .btn-ghost{ background:transparent; border-color:var(--line-strong); }
 .btn-ghost:hover{ background:var(--paper-dim); }
