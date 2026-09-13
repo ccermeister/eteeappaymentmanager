@@ -1,0 +1,10 @@
+{
+  "name": "eteeappaymentmanager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A browser-based ETEEAP student payment ledger.",
+  "scripts": {
+    "check": "node --check app.js",
+    "start": "node server.js"
+  }
+}
