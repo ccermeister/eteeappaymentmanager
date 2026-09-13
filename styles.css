@@ -544,7 +544,6 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
 .main{ min-width:0; }
 .topbar{ padding:20px 32px 16px; background:var(--white); border-bottom:1px solid var(--line); }
 .topbar h2{ color:var(--text); font-size:22px; }
-.topbar-logout{ margin-left:auto; }
 .view-root{ padding:24px 32px 48px; max-width:1280px; }
 .back-link{ display:inline-flex; align-items:center; width:max-content; margin-bottom:14px; padding:8px 12px; border:1px solid var(--forest); border-radius:6px; background:var(--forest-bg); color:var(--forest); font-size:12px; font-weight:600; }
 .back-link:hover{ background:#DCEBE1; color:#326D54; text-decoration:none; }
@@ -620,7 +619,6 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
   .sidebar-nav{ padding:8px 12px; }
   .view-root{ padding:20px 16px 40px; }
   .topbar{ padding:16px; }
-  .topbar-logout{ min-height:32px; padding:6px 10px; }
   .stat-row{ gap:10px; }
   .stat-card{ min-height:98px; padding:14px; }
   .student-header{ padding:16px; }
