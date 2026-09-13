@@ -465,20 +465,22 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
 }
 .login-visual{
   min-height:min(680px, calc(100vh - 96px));
-  background:
-    linear-gradient(135deg, rgba(53,80,94,.16), rgba(53,80,94,.72)),
-    url("public/login-bg.jpg") center/cover no-repeat;
-  border-radius:8px;
-  position:relative;
-  overflow:hidden;
   display:flex;
-  align-items:flex-end;
-  padding:clamp(28px, 5vw, 64px);
+  flex-direction:column;
+  gap:18px;
 }
-.login-visual-overlay{ max-width:420px; color:var(--white); }
-.login-visual-kicker{ margin:0 0 14px; font-size:11px; font-weight:600; letter-spacing:.08em; }
-.login-visual-title{ margin:0; font-size:clamp(30px, 4vw, 48px); line-height:1.08; font-weight:600; }
-.login-visual-caption{ margin:18px 0 0; max-width:34ch; color:rgba(255,255,255,.86); line-height:1.5; }
+.login-visual-copy{ max-width:520px; color:var(--text); padding:0 4px; }
+.login-visual-kicker{ margin:0 0 10px; color:var(--ink); font-size:11px; font-weight:600; letter-spacing:.08em; }
+.login-visual-title{ margin:0; color:var(--text); font-size:clamp(30px, 4vw, 48px); line-height:1.08; font-weight:600; }
+.login-visual-caption{ margin:12px 0 0; max-width:42ch; color:var(--text-dim); line-height:1.5; }
+.login-visual-image{
+  min-height:0;
+  flex:1;
+  border-radius:8px;
+  background:
+    linear-gradient(135deg, rgba(53,80,94,.08), rgba(53,80,94,.22)),
+    url("public/login-bg.jpg") center/cover no-repeat;
+}
 .login-card{
   width:100%;
   max-width:420px;
@@ -586,9 +588,9 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
 
 @media (max-width:900px){
   .login-screen{ grid-template-columns:1fr; gap:18px; padding:24px 18px; }
-  .login-visual{ min-height:240px; padding:28px 24px; }
-  .login-visual-title{ font-size:30px; }
-  .login-visual-caption{ margin-top:10px; }
+  .login-visual{ min-height:240px; }
+  .login-visual-copy{ display:none; }
+  .login-visual-image{ min-height:240px; }
   .login-card{ max-width:none; }
   .global-topbar{ height:52px; padding:0 16px; }
   .global-context{ display:none; }
