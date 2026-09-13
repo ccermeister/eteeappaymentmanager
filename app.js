@@ -896,6 +896,12 @@ function searchBox2Focus(){
 
 // Delegated handlers for request actions rendered inside the dynamic review modal.
 document.addEventListener("click", (e)=>{
+  const closeButton = e.target.closest("[data-close-modal]");
+  if(closeButton){
+    closeModal();
+    return;
+  }
+
   const approveEdit = e.target.closest("[data-approve-edit]");
   const approveDelete = e.target.closest("[data-approve-delete]");
   const btn = e.target.closest("[data-resolve-request]");
