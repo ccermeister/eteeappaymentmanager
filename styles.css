@@ -609,6 +609,9 @@ h1,h2,h3,h4{ font-family:var(--font-sans); font-weight:600; letter-spacing:0; }
   .app-shell{ flex-direction:column; min-height:calc(100vh - 52px); }
   .sidebar{ width:100%; height:auto; position:relative; top:auto; border-right:0; border-bottom:1px solid var(--line); }
   .sidebar-top{ padding:14px 18px; }
+  .sidebar-bottom{ display:block; position:absolute; top:10px; right:12px; padding:0; border:0; }
+  .sidebar-bottom .account-summary{ display:none; }
+  .sidebar-bottom #logout-btn{ width:auto; min-height:32px; padding:6px 12px; }
   .sidebar-nav{ padding:8px 12px; }
   .view-root{ padding:20px 16px 40px; }
   .topbar{ padding:16px; }
