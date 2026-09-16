@@ -1,7 +1,7 @@
 /* =========================================================
    ETEEAP LEDGER — collections & student payment tracker
-   Pure client-side app. Data persists in this browser via
-   localStorage. No server, no external accounts involved.
+  Client-side app with shared ledger data and account profiles
+  stored in Supabase, plus local browser fallbacks.
    ========================================================= */
 
 const STORAGE_KEY = "eteeapLedgerData_v1";
@@ -23,6 +23,11 @@ function applyUserSettings(user){
   const profile = USER_SETTINGS[user.username];
   if(profile?.display) user.display = profile.display;
   if(profile?.avatar) user.avatar = profile.avatar;
+}
+function applySupabaseProfile(user, authUser){
+  const profile = authUser?.user_metadata || {};
+  if(profile.display) user.display = profile.display;
+  if(profile.avatar) user.avatar = profile.avatar;
 }
 function avatarMarkup(user){
   const initials = String(user.display || user.username || "?")
@@ -606,7 +611,7 @@ function modalUserSettings(){
       <form id="form-user-settings">
         <label class="field"><span>Display name</span><input type="text" id="settings-display-name" value="${escapeHtml(CURRENT_USER.display)}" maxlength="80" required></label>
         <label class="field"><span>Display picture</span><input type="file" id="settings-avatar" accept="image/png,image/jpeg,image/webp"></label>
-        <p class="hint" style="display:block;margin-top:-8px;margin-bottom:14px;">Your picture is saved only in this browser.</p>
+        <p class="hint" style="display:block;margin-top:-8px;margin-bottom:14px;">Your profile is saved to your account.</p>
         <div class="modal-foot">
           <button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>
           <button type="submit" class="btn btn-primary">Save settings</button>
@@ -624,15 +629,28 @@ function modalUserSettings(){
     };
     reader.readAsDataURL(file);
   });
-  document.getElementById("form-user-settings").addEventListener("submit", (e)=>{
+  document.getElementById("form-user-settings").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const display = document.getElementById("settings-display-name").value.trim();
     if(!display) return;
     const profile = USER_SETTINGS[CURRENT_USER.username] || {};
-    const finish = avatar=>{
-      USER_SETTINGS[CURRENT_USER.username] = { display, avatar: avatar || profile.avatar || null };
+    const finish = async avatar=>{
+      const savedAvatar = avatar || profile.avatar || CURRENT_USER.avatar || null;
+      if(!supabaseClient){
+        alert("Supabase is not configured. Your profile could not be saved.");
+        return;
+      }
+      const {data, error} = await supabaseClient.auth.updateUser({
+        data: { display, avatar: savedAvatar },
+      });
+      if(error || !data.user){
+        console.error("Could not save account settings.", error);
+        alert(error?.message || "Could not save account settings.");
+        return;
+      }
+      USER_SETTINGS[CURRENT_USER.username] = { display, avatar: savedAvatar };
       CURRENT_USER.display = display;
-      CURRENT_USER.avatar = USER_SETTINGS[CURRENT_USER.username].avatar;
+      CURRENT_USER.avatar = savedAvatar;
       saveUserSettings();
       setSession(CURRENT_USER);
       addAuditLog("Updated account settings", `Updated profile for "${CURRENT_USER.username}"`);
@@ -641,8 +659,8 @@ function modalUserSettings(){
     };
     const file = avatarInput.files[0];
     if(!file){ finish(null); return; }
-    if(file.size > 2 * 1024 * 1024){
-      alert("Please choose an image smaller than 2 MB.");
+    if(file.size > 512 * 1024){
+      alert("Please choose an image smaller than 512 KB.");
       return;
     }
     const reader = new FileReader();
@@ -1107,9 +1125,10 @@ loginForm.addEventListener("submit", async (e)=>{
     email: data.user.email,
     password: "",
     role,
-    display: data.user.app_metadata?.display || data.user.email,
+        display: data.user.app_metadata?.display || data.user.user_metadata?.display || data.user.email,
   };
   applyUserSettings(CURRENT_USER);
+      applySupabaseProfile(CURRENT_USER, data.user);
   setSession(CURRENT_USER);
   window.location.href = "dashboard.html";
 });
@@ -1149,9 +1168,10 @@ function showApp(){
         email: user.email,
         password: "",
         role,
-        display: user.app_metadata?.display || user.email,
+        display: user.app_metadata?.display || user.user_metadata?.display || user.email,
       };
       applyUserSettings(CURRENT_USER);
+      applySupabaseProfile(CURRENT_USER, user);
       setSession(CURRENT_USER);
     } else {
       CURRENT_USER = null;
