@@ -76,6 +76,7 @@ async function loadSharedData(){
     return;
   }
   if(data?.data) DB = Object.assign(defaultData(), data.data);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
 }
 
 let DB = loadData();
@@ -1179,8 +1180,9 @@ function showApp(){
     }
   }
   if(CURRENT_USER && document.getElementById("app-shell")){
-    await loadSharedData();
     showApp();
+    await loadSharedData();
+    render();
   } else if(CURRENT_USER && loginForm){
     window.location.href = "dashboard.html";
   }
