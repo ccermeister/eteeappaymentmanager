@@ -1,7 +1,7 @@
 /* =========================================================
    ETEEAP LEDGER — collections & student payment tracker
   Client-side app with shared ledger data and account profiles
-  stored in Supabase, plus local browser fallbacks.
+  stored in Supabase.
    ========================================================= */
 
 const STORAGE_KEY = "eteeapLedgerData_v1";
@@ -42,20 +42,19 @@ function defaultData(){
   return { students: [], payables: [], payments: [], auditLogs: [], editRequests: [] };
 }
 
-function loadData(){
+function loadLegacyData(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return defaultData();
+    if(!raw) return null;
     const parsed = JSON.parse(raw);
     return Object.assign(defaultData(), parsed);
   }catch(e){
-    console.error("Could not read saved data, starting fresh.", e);
-    return defaultData();
+    console.error("Could not read legacy browser data.", e);
+    return null;
   }
 }
 
 function saveData(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
   if(supabaseClient && CURRENT_USER?.id){
     sharedSaveChain = sharedSaveChain
       .then(()=>supabaseClient.from("ledger_state").upsert({
@@ -74,6 +73,7 @@ function saveData(){
 
 async function loadSharedData(){
   if(!supabaseClient || !CURRENT_USER?.id) return;
+  const legacyData = loadLegacyData();
   const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).maybeSingle();
   if(error){
     console.error("Could not load shared ledger data.", error);
@@ -81,10 +81,12 @@ async function loadSharedData(){
   }
   if(data?.data){
     DB = Object.assign(defaultData(), data.data);
-  } else if(DB.students.length || DB.payables.length || DB.payments.length || DB.auditLogs.length || DB.editRequests.length){
+    localStorage.removeItem(STORAGE_KEY);
+  } else if(legacyData && (legacyData.students.length || legacyData.payables.length || legacyData.payments.length || legacyData.auditLogs.length || legacyData.editRequests.length) && can("create")){
+    DB = legacyData;
     await saveData();
+    localStorage.removeItem(STORAGE_KEY);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
 }
 
 let sharedSaveChain = Promise.resolve();
@@ -102,7 +104,6 @@ function subscribeToSharedData(){
     }, payload=>{
       if(!payload.new?.data) return;
       DB = Object.assign(defaultData(), payload.new.data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
       render();
     })
     .subscribe(status=>{
@@ -110,7 +111,7 @@ function subscribeToSharedData(){
     });
 }
 
-let DB = loadData();
+let DB = defaultData();
 let USER_SETTINGS = loadUserSettings();
 
 function genId(prefix){
