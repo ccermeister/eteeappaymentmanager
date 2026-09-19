@@ -80,15 +80,20 @@ function saveData(){
 async function loadSharedData(){
   if(!supabaseClient || !CURRENT_USER?.id) return;
   const legacyData = loadLegacyData();
-  const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).maybeSingle();
+  const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).single();
   if(error){
     console.error("Could not load shared ledger data.", error);
+    alert(error.message || "Could not load shared ledger data. Please sign in again.");
     return;
   }
-  if(data?.data){
-    DB = Object.assign(defaultData(), data.data);
-    localStorage.removeItem(STORAGE_KEY);
-  } else if(legacyData && (legacyData.students.length || legacyData.payables.length || legacyData.payments.length || legacyData.auditLogs.length || legacyData.editRequests.length) && can("create")){
+  if(!data?.data){
+    console.error("Shared ledger data is empty.");
+    alert("The shared ledger data could not be found. Please contact the administrator.");
+    return;
+  }
+  DB = Object.assign(defaultData(), data.data);
+  localStorage.removeItem(STORAGE_KEY);
+  if(legacyData && !(DB.students.length || DB.payables.length || DB.payments.length || DB.auditLogs.length || DB.editRequests.length) && can("create")){
     DB = legacyData;
     await saveData();
     localStorage.removeItem(STORAGE_KEY);

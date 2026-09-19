@@ -10,7 +10,7 @@ alter table public.ledger_state enable row level security;
 create policy "Ledger users can read shared state"
 	on public.ledger_state for select
 	to authenticated
-	using ((select auth.jwt() -> 'app_metadata' ->> 'role') in ('admin', 'treasurer', 'viewer'));
+	using ((select auth.uid()) is not null);
 
 create policy "Staff can create shared state"
 	on public.ledger_state for insert
