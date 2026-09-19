@@ -64,9 +64,15 @@ function saveData(){
         updated_at: new Date().toISOString(),
       }))
       .then(({error})=>{
-        if(error) console.error("Could not save shared ledger data.", error);
+        if(error){
+          console.error("Could not save shared ledger data.", error);
+          alert(error.message || "Could not save shared ledger data. Please try again.");
+        }
       })
-      .catch(error=>console.error("Could not save shared ledger data.", error));
+      .catch(error=>{
+        console.error("Could not save shared ledger data.", error);
+        alert(error.message || "Could not save shared ledger data. Please try again.");
+      });
   }
   return sharedSaveChain;
 }
@@ -718,7 +724,7 @@ function modalAddStudent(){
       </form>
     </div>
   `);
-  document.getElementById("form-add-student").addEventListener("submit", (e)=>{
+  document.getElementById("form-add-student").addEventListener("submit", async (e)=>{
     e.preventDefault();
     const name = document.getElementById("s-name").value.trim();
     if(!name) return;
@@ -731,7 +737,7 @@ function modalAddStudent(){
     };
     DB.students.push(student);
     addAuditLog("Created student", `Added profile for "${name}"`);
-    saveData();
+    await saveData();
     closeModal();
     setView("students");
   });
