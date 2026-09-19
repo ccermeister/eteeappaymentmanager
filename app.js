@@ -79,24 +79,21 @@ function saveData(){
 
 async function loadSharedData(){
   if(!supabaseClient || !CURRENT_USER?.id) return;
-  const legacyData = loadLegacyData();
-  const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).single();
-  if(error){
-    console.error("Could not load shared ledger data.", error);
-    alert(error.message || "Could not load shared ledger data. Please sign in again.");
-    return;
-  }
-  if(!data?.data){
-    console.error("Shared ledger data is empty.");
-    alert("The shared ledger data could not be found. Please contact the administrator.");
-    return;
-  }
-  DB = Object.assign(defaultData(), data.data);
-  localStorage.removeItem(STORAGE_KEY);
-  if(legacyData && !(DB.students.length || DB.payables.length || DB.payments.length || DB.auditLogs.length || DB.editRequests.length) && can("create")){
-    DB = legacyData;
-    await saveData();
+  try{
+    const legacyData = loadLegacyData();
+    const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).single();
+    if(error) throw error;
+    if(!data?.data) throw new Error("The shared ledger row is empty.");
+    DB = Object.assign(defaultData(), data.data);
     localStorage.removeItem(STORAGE_KEY);
+    if(legacyData && !(DB.students.length || DB.payables.length || DB.payments.length || DB.auditLogs.length || DB.editRequests.length) && can("create")){
+      DB = legacyData;
+      await saveData();
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }catch(error){
+    console.error("Could not load shared ledger data.", error);
+    alert(`Could not reach the shared Supabase ledger. Check this device's internet or network access, then sign in again.\n\n${error.message || "Network request failed."}`);
   }
 }
 
