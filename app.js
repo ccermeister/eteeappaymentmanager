@@ -57,18 +57,12 @@ function loadLegacyData(){
 function saveData(){
   if(supabaseClient && CURRENT_USER?.id){
     sharedSaveChain = sharedSaveChain
-      .then(()=>supabaseClient.from("ledger_state").upsert({
+      .then(()=>sharedLedgerRequest("POST", {
         id: 1,
         data: DB,
         updated_by: CURRENT_USER.id,
         updated_at: new Date().toISOString(),
       }))
-      .then(({error})=>{
-        if(error){
-          console.error("Could not save shared ledger data.", error);
-          alert(error.message || "Could not save shared ledger data. Please try again.");
-        }
-      })
       .catch(error=>{
         console.error("Could not save shared ledger data.", error);
         alert(error.message || "Could not save shared ledger data. Please try again.");
@@ -77,14 +71,34 @@ function saveData(){
   return sharedSaveChain;
 }
 
+async function sharedLedgerRequest(method, body){
+  const {data, error} = await supabaseClient.auth.getSession();
+  if(error) throw error;
+  const accessToken = data.session?.access_token;
+  if(!accessToken) throw new Error("Your Supabase session has expired. Please sign in again.");
+
+  const response = await fetch("/api/ledger-state?select=data&id=eq.1", {
+    method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const responseText = await response.text();
+  let responseData = null;
+  try{ responseData = responseText ? JSON.parse(responseText) : null; }catch(e){}
+  if(!response.ok) throw new Error(responseData?.message || responseData?.error || `Shared ledger request failed (${response.status}).`);
+  return responseData;
+}
+
 async function loadSharedData(){
   if(!supabaseClient || !CURRENT_USER?.id) return;
   try{
     const legacyData = loadLegacyData();
-    const {data, error} = await supabaseClient.from("ledger_state").select("data").eq("id", 1).single();
-    if(error) throw error;
-    if(!data?.data) throw new Error("The shared ledger row is empty.");
-    DB = Object.assign(defaultData(), data.data);
+    const responseData = await sharedLedgerRequest("GET");
+    if(!responseData?.data) throw new Error("The shared ledger row is empty.");
+    DB = Object.assign(defaultData(), responseData.data);
     localStorage.removeItem(STORAGE_KEY);
     if(legacyData && !(DB.students.length || DB.payables.length || DB.payments.length || DB.auditLogs.length || DB.editRequests.length) && can("create")){
       DB = legacyData;
