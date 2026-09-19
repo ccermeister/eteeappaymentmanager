@@ -57,15 +57,19 @@ function loadData(){
 function saveData(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
   if(supabaseClient && CURRENT_USER?.id){
-    supabaseClient.from("ledger_state").upsert({
-      id: 1,
-      data: DB,
-      updated_by: CURRENT_USER.id,
-      updated_at: new Date().toISOString(),
-    }).then(({error})=>{
-      if(error) console.error("Could not save shared ledger data.", error);
-    });
+    sharedSaveChain = sharedSaveChain
+      .then(()=>supabaseClient.from("ledger_state").upsert({
+        id: 1,
+        data: DB,
+        updated_by: CURRENT_USER.id,
+        updated_at: new Date().toISOString(),
+      }))
+      .then(({error})=>{
+        if(error) console.error("Could not save shared ledger data.", error);
+      })
+      .catch(error=>console.error("Could not save shared ledger data.", error));
   }
+  return sharedSaveChain;
 }
 
 async function loadSharedData(){
@@ -75,8 +79,35 @@ async function loadSharedData(){
     console.error("Could not load shared ledger data.", error);
     return;
   }
-  if(data?.data) DB = Object.assign(defaultData(), data.data);
+  if(data?.data){
+    DB = Object.assign(defaultData(), data.data);
+  } else if(DB.students.length || DB.payables.length || DB.payments.length || DB.auditLogs.length || DB.editRequests.length){
+    await saveData();
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+}
+
+let sharedSaveChain = Promise.resolve();
+let sharedStateChannel = null;
+
+function subscribeToSharedData(){
+  if(!supabaseClient || !CURRENT_USER?.id) return;
+  sharedStateChannel = supabaseClient
+    .channel("ledger-state-sync")
+    .on("postgres_changes", {
+      event: "UPDATE",
+      schema: "public",
+      table: "ledger_state",
+      filter: "id=eq.1",
+    }, payload=>{
+      if(!payload.new?.data) return;
+      DB = Object.assign(defaultData(), payload.new.data);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+      render();
+    })
+    .subscribe(status=>{
+      if(status === "CHANNEL_ERROR") console.error("Could not subscribe to shared ledger data.");
+    });
 }
 
 let DB = loadData();
@@ -1180,8 +1211,9 @@ function showApp(){
     }
   }
   if(CURRENT_USER && document.getElementById("app-shell")){
-    showApp();
     await loadSharedData();
+    showApp();
+    subscribeToSharedData();
     render();
   } else if(CURRENT_USER && loginForm){
     window.location.href = "dashboard.html";
