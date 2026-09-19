@@ -1,6 +1,14 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "api/ledger-state.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.js", "use": "@vercel/static" },
+    { "src": "*.css", "use": "@vercel/static" },
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
   "rewrites": [
+    { "source": "/api/ledger-state", "destination": "/api/ledger-state.js" },
     { "source": "/", "destination": "/index.html" }
   ]
 }
