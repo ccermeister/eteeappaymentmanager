@@ -32,7 +32,8 @@ export default defineComponent({
         showAddModal.value = false
         form.value = { name: '', course: '', contact_number: '' }
       } catch (error: any) {
-        alert("Failed to add student: " + (error.message || 'Unknown error'))
+        console.error("Add student full error:", error);
+        alert("Failed to add student: " + (error.message || JSON.stringify(error) || 'Unknown error'))
       } finally {
         submitting.value = false
       }

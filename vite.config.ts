@@ -8,4 +8,15 @@ export default defineConfig({
     vue(),
     vueJsx(),
   ],
+  server: {
+    host: 'localhost',
+    proxy: {
+      '/supabase-api': {
+        target: 'https://ezybifdvihklonpntabw.supabase.co',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/supabase-api/, '')
+      }
+    }
+  }
 })
