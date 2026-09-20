@@ -1,0 +1,358 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --bg-page: #F8F9FA;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F1F3F5;
+  --bg-muted: #E9ECEF;
+  --bg-overlay: rgba(0, 0, 0, 0.4);
+  
+  --text-main: #212529;
+  --text-secondary: #495057;
+  --text-tertiary: #6C757D;
+  --text-muted: #868E96;
+  --text-light: #ADB5BD;
+  
+  --border-subtle: #F1F3F5;
+  --border-light: #E9ECEF;
+  --border-main: #DEE2E6;
+  
+  --primary-base: #2B3B4E;
+  --primary-hover: #1A2533;
+  
+  /* Status Colors */
+  --success-bg: #D3F9D8;
+  --success-text: #2B8A3E;
+  --success-fill: #40C057;
+  
+  --danger-bg: #FFF5F5;
+  --danger-text: #C92A2A;
+  --danger-fill: #228BE6; /* Note: originally blue in app */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  margin: 0;
+  color: var(--text-main);
+  background-color: var(--bg-page);
+}
+
+/* Page Layout */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.page-header {
+  background: var(--bg-surface);
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-base);
+  margin: 0;
+}
+
+.content-area {
+  padding: 32px;
+  flex: 1;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-primary {
+  background: var(--primary-base);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  color: var(--text-secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+
+.btn-ghost {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.5rem;
+}
+
+.btn-ghost:hover {
+  color: var(--text-secondary);
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border-main);
+  width: 300px;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.search-input:focus {
+  border-color: var(--primary-base);
+}
+
+.record-count {
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+}
+
+/* Tables */
+.table-card {
+  background: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table thead {
+  background: var(--bg-page);
+  border-bottom: 2px solid var(--border-main);
+}
+
+.data-table th {
+  padding: 16px 24px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.data-table tbody {
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.data-table tr:not(:first-child) {
+  border-top: 1px solid var(--border-light);
+}
+
+.data-table td {
+  padding: 16px 24px;
+}
+
+.empty-state {
+  padding: 48px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Status & Links */
+.link-primary {
+  color: var(--primary-base);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link-primary:hover {
+  text-decoration: underline;
+}
+
+.text-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-cleared {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.status-balance {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.status-none {
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+}
+
+/* Progress */
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-track {
+  flex: 1;
+  background: var(--bg-muted);
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+}
+
+.progress-fill.cleared {
+  background: var(--success-fill);
+}
+
+.progress-fill.balance {
+  background: var(--danger-fill);
+}
+
+.progress-pct {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  width: 32px;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-main);
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Forms */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-main);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.form-input:focus {
+  border-color: var(--primary-base);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
