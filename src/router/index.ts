@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../store/authStore'
-import Login from '../views/Login'
-import AppLayout from '../views/AppLayout'
-import DashboardOverview from '../views/DashboardOverview'
-import Students from '../views/Students'
-import StudentDetail from '../views/StudentDetail'
-import Payments from '../views/Payments'
-import Payables from '../views/Payables'
-import EditRequests from '../views/EditRequests'
-import AuditLog from '../views/AuditLog'
+import Login from '../views/Login.vue'
+import AppLayout from '../views/AppLayout.vue'
+import DashboardOverview from '../views/DashboardOverview.vue'
+import Students from '../views/Students.vue'
+import StudentDetail from '../views/StudentDetail.vue'
+import Payments from '../views/Payments.vue'
+import Payables from '../views/Payables.vue'
+import EditRequests from '../views/EditRequests.vue'
+import AuditLog from '../views/AuditLog.vue'
 
 const routes = [
   {
