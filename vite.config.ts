@@ -11,11 +11,10 @@ export default defineConfig({
   server: {
     host: 'localhost',
     proxy: {
-      '/supabase-api': {
-        target: 'https://ezybifdvihklonpntabw.supabase.co',
+      '/supabase': {
+        target: process.env.VITE_SUPABASE_URL || 'https://ezybifdvihklonpntabw.supabase.co',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/supabase-api/, '')
+        rewrite: (path) => path.replace(/^\/supabase/, '')
       }
     }
   }

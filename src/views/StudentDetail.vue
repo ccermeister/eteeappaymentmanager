@@ -33,9 +33,37 @@ const handleAddPayable = async () => {
   const amountStr = window.prompt("Enter amount:")
   if (!amountStr) return
   const amount = Number(amountStr)
-  if (isNaN(amount)) return alert("Invalid amount")
+  if (isNaN(amount) || amount <= 0) return alert("Invalid amount")
   const deadline = window.prompt("Enter deadline (YYYY-MM-DD) or leave blank:")
-  await ledgerStore.addPayable(studentId, name, amount, deadline || "")
+  
+  try {
+    await ledgerStore.addPayable(studentId, name, amount, deadline || "")
+  } catch (error: any) {
+    alert("Failed to add payable: " + (error.message || 'Unknown error'))
+  }
+}
+
+const handlePay = async (payable: any) => {
+  const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === payable.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
+  const remaining = Math.max(0, payable.amount - paidAmt)
+  
+  const amountStr = window.prompt(`Enter amount to pay for ${payable.name} (Remaining: ₱${remaining}):`)
+  if (!amountStr) return
+  const amount = Number(amountStr)
+  if (isNaN(amount) || amount <= 0) return alert("Invalid amount")
+  
+  if (amount > remaining) {
+    return alert("Payment exceeds remaining balance.")
+  }
+
+  const method = amount >= remaining ? 'full' : 'partial'
+  const note = window.prompt("Enter note (optional):")
+  
+  try {
+    await ledgerStore.recordPayment(studentId, payable.id, amount, method, note || "")
+  } catch (error: any) {
+    alert("Failed to record payment: " + (error.message || 'Unknown error'))
+  }
 }
 
 const printHistory = () => {
@@ -50,7 +78,7 @@ const printHistory = () => {
       <td>${payable?.name || "(payable removed)"}</td>
       <td class="amount">${peso(payment.amount)}</td>
       <td>${payment.method === "full" ? "Full" : "Partial"}</td>
-      <td>${payment.recordedBy || "—"}</td>
+      <td>${payment.recorded_by || "—"}</td>
       <td>${payment.note || "—"}</td>
     </tr>`
   }).join("") || `<tr><td colspan="6" class="empty">No payments recorded yet.</td></tr>`
@@ -178,7 +206,7 @@ const printHistory = () => {
                 <span :style="{ ...getDeadlineInfo(pb.deadline).style, fontSize: '0.85rem' }">{{ getDeadlineInfo(pb.deadline).label }}</span>
               </td>
               <td style="padding: 16px 24px;">
-                <button v-if="authStore.can('pay') && (() => {
+                <button @click="handlePay(pb)" v-if="authStore.can('pay') && (() => {
                   const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === pb.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
                   return paidAmt < pb.amount
                 })()" style="background: #2B3B4E; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">Pay</button>
@@ -215,7 +243,7 @@ const printHistory = () => {
               </td>
               <td style="padding: 16px 24px; font-weight: 600; color: #2F9E44;">{{ peso(p.amount) }}</td>
               <td style="padding: 16px 24px;">{{ p.method === 'full' ? 'Full' : 'Partial' }}</td>
-              <td style="padding: 16px 24px;">{{ p.recordedBy }}</td>
+              <td style="padding: 16px 24px;">{{ p.recorded_by }}</td>
               <td style="padding: 16px 24px;">{{ p.note || '—' }}</td>
               <td style="padding: 16px 24px;">
                 <div v-if="authStore.can('delete')" style="display: flex; gap: 8px;">
@@ -223,7 +251,7 @@ const printHistory = () => {
                   <button style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Del</button>
                 </div>
                 <template v-else-if="authStore.can('requestEdit')">
-                  <span v-if="ledgerStore.editRequests.find(r => r.paymentId === p.id && r.status === 'pending')" style="font-size: 0.75rem; color: #ADB5BD;">Edit requested</span>
+                  <span v-if="ledgerStore.editRequests.find(r => r.payment_id === p.id && r.status === 'pending')" style="font-size: 0.75rem; color: #ADB5BD;">Edit requested</span>
                   <button v-else style="background: transparent; border: 1px solid #DEE2E6; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Request edit</button>
                 </template>
               </td>

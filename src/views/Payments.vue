@@ -31,9 +31,9 @@ const formatCurrency = (amount: number) => {
         <tbody>
           <tr v-for="payment in ledgerStore.payments" :key="payment.id">
             <td>{{ new Date(payment.date).toLocaleDateString() }}</td>
-            <td>{{ payment.studentId }}</td>
+            <td>{{ payment.profile_ledger_id }}</td>
             <td style="font-weight: 600; color: var(--success);">{{ formatCurrency(payment.amount) }}</td>
-            <td><span style="font-family: monospace; opacity: 0.8;">{{ payment.reference || 'N/A' }}</span></td>
+            <td><span style="font-family: monospace; opacity: 0.8;">{{ payment.id || 'N/A' }}</span></td>
           </tr>
         </tbody>
       </table>

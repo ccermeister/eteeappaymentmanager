@@ -39,12 +39,7 @@ const navItems = computed(() => {
   return items
 })
 
-const routeTitle = computed(() => {
-  if (route.name === 'StudentDetail') return 'Student profile'
-  if (route.name === 'EditRequests') return 'Edit requests'
-  if (route.name === 'AuditLog') return 'Audit log'
-  return String(route.name || 'Dashboard')
-})
+
 </script>
 
 <template>
