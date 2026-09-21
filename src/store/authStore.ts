@@ -7,13 +7,29 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(true)
 
   const role = computed(() => {
-    // Basic role logic, assume admin for now if they have an account
-    return 'admin'
+    if (!user.value) return null
+    // If the email contains 'admin', they are an admin. Otherwise, they are a treasurer.
+    if (user.value.email?.toLowerCase().includes('admin')) {
+      return 'admin'
+    }
+    return 'treasurer'
   })
 
-  const can = (_action: string) => {
-    // For now, logged in users can do everything
-    return !!user.value
+  const can = (action: string) => {
+    if (!user.value) return false
+    const currentRole = role.value
+    
+    if (currentRole === 'admin') {
+      // Admins can do everything except request edits (since they can delete directly)
+      return ['delete', 'approve', 'viewAudit', 'create', 'pay', 'edit'].includes(action)
+    }
+    
+    if (currentRole === 'treasurer') {
+      // Treasurers can manage records but must request edits for payments
+      return ['create', 'pay', 'edit', 'requestEdit'].includes(action)
+    }
+    
+    return false
   }
 
   const initialize = async () => {
