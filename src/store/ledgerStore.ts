@@ -58,17 +58,15 @@ export const useLedgerStore = defineStore('ledger', () => {
   }
 
   const addPayable = async (profile_ledger_id: string, name: string, amount: number, deadline: string) => {
-    const { data, error } = await supabase.from('payables').insert({
-      profile_ledger_id, name, amount, deadline
-    }).select().single()
-    
-    if (error) {
-      // Fallback in case column is named student_id
-      const retry = await supabase.from('payables').insert({ student_id: profile_ledger_id, name, amount, deadline }).select().single();
-      if (retry.error) throw retry.error;
-      if (retry.data) payables.value.push(retry.data)
-      return;
+    // deadline might be empty string from prompt, so only include it if it's not empty
+    const payload: any = { profile_ledger_id, name, amount }
+    if (deadline && deadline.trim() !== '') {
+      payload.deadline = deadline
     }
+
+    const { data, error } = await supabase.from('payables').insert(payload).select().single()
+    
+    if (error) throw error
     if (data) payables.value.push(data)
   }
 
@@ -119,6 +117,11 @@ export const useLedgerStore = defineStore('ledger', () => {
   }
 
   const approveRequest = async (id: string) => {
+    const request = requests.value.find(r => r.id === id)
+    if (request && request.payment_id) {
+      await deletePayment(request.payment_id)
+    }
+    
     const { data, error } = await supabase.from('edit_requests').update({ status: 'approved' }).eq('id', id).select().single()
     if (error) throw error
     const idx = requests.value.findIndex(r => r.id === id)

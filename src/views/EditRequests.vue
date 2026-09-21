@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useLedgerStore } from '../store/ledgerStore'
 import { useAuthStore } from '../store/authStore'
 import { peso, fmtDateTime } from '../utils/helpers'
@@ -7,12 +7,45 @@ import { peso, fmtDateTime } from '../utils/helpers'
 const ledgerStore = useLedgerStore()
 const authStore = useAuthStore()
 
+const showReviewModal = ref(false)
+const selectedRequest = ref<any>(null)
+const submitting = ref(false)
+
 const requests = computed(() => {
   const mine = authStore.role === 'treasurer'
   return ledgerStore.editRequests
     .filter(r => mine ? r.requested_by === (authStore.user?.user_metadata?.display || authStore.user?.email) : true)
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 })
+
+const openReview = (r: any) => {
+  selectedRequest.value = r
+  showReviewModal.value = true
+}
+
+const handleApprove = async (id: string) => {
+  submitting.value = true
+  try {
+    await ledgerStore.approveRequest(id)
+    showReviewModal.value = false
+  } catch (error: any) {
+    alert("Failed to approve request: " + (error.message || 'Unknown error'))
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleReject = async (id: string) => {
+  submitting.value = true
+  try {
+    await ledgerStore.rejectRequest(id)
+    showReviewModal.value = false
+  } catch (error: any) {
+    alert("Failed to reject request: " + (error.message || 'Unknown error'))
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -70,7 +103,7 @@ const requests = computed(() => {
               </td>
               <td style="padding: 16px 24px;">
                 <template v-if="r.status === 'pending'">
-                  <button v-if="authStore.role === 'admin'" style="background: transparent; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">Review</button>
+                  <button v-if="authStore.role === 'admin'" @click="openReview(r)" style="background: transparent; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">Review</button>
                   <span v-else style="color: #F08C00; font-size: 0.85rem;">Awaiting admin</span>
                 </template>
                 <span v-else style="color: #ADB5BD; font-size: 0.85rem;">Resolved</span>
@@ -84,6 +117,33 @@ const requests = computed(() => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div v-if="showReviewModal && selectedRequest" class="modal-overlay">
+      <div class="modal-content animate-scale-in">
+        <header class="modal-header">
+          <h3 class="modal-title">Review Edit Request</h3>
+          <button class="btn-ghost" @click="showReviewModal = false">&times;</button>
+        </header>
+        
+        <div class="modal-body">
+          <p style="margin-bottom: 16px; color: #495057; font-size: 0.95rem;">
+            <strong>Requested by:</strong> {{ selectedRequest.requested_by }}<br/>
+            <strong>Reason:</strong> {{ selectedRequest.note }}
+          </p>
+          <div style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 16px;">
+            <strong>Warning:</strong> Approving this request will permanently delete the incorrect payment record. The Treasurer can then enter a new payment to correct the mistake.
+          </div>
+          
+          <div class="modal-actions" style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-secondary" @click="handleReject(selectedRequest.id)" :disabled="submitting">Reject Request</button>
+            <button class="btn" style="background: #E03131; color: white;" @click="handleApprove(selectedRequest.id)" :disabled="submitting">
+              {{ submitting ? 'Processing...' : 'Approve & Delete Payment' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
