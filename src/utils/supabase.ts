@@ -1,8 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types/database.types';
+import { createClient } from "@supabase/supabase-js";
 
-const isDev = import.meta.env.DEV;
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-const supabaseKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '').trim();
+const supabaseUrl = `${window.location.origin}/supabase`; // Full URL required by supabase-js validation
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  global: {
+    fetch: (...args) => fetch(...args)
+  }
+});

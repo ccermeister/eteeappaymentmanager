@@ -30,8 +30,13 @@ const handleAddStudent = async (e: Event) => {
     showAddModal.value = false
     form.value = { name: '', course: '', contact_number: '' }
   } catch (error: any) {
-    console.error("Add student full error:", error);
-    alert("Failed to add student: " + (error.message || JSON.stringify(error) || 'Unknown error'))
+    console.error('Add student failed:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+    alert("Failed to add student: " + (error.message || 'Unknown error'));
   } finally {
     submitting.value = false
   }

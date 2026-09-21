@@ -1,220 +1,142 @@
 import { defineStore } from 'pinia'
-import { useAuthStore } from './authStore'
+import { ref } from 'vue'
 import { supabase } from '../utils/supabase'
-import type { Database } from '../types/database.types'
 
-type Student = Database['public']['Tables']['profile_ledger']['Row']
-type Payable = Database['public']['Tables']['payables']['Row']
-type Payment = Database['public']['Tables']['transaction_records']['Row']
-type AuditLog = Database['public']['Tables']['audit_logs']['Row']
-type EditRequest = Database['public']['Tables']['edit_requests']['Row']
+export const useLedgerStore = defineStore('ledger', () => {
+  const students = ref<any[]>([])
+  const payables = ref<any[]>([])
+  const payments = ref<any[]>([])
+  const auditLogs = ref<any[]>([])
+  const requests = ref<any[]>([])
 
-export const useLedgerStore = defineStore('ledger', {
-  state: () => ({
-    students: [] as Student[],
-    payables: [] as Payable[],
-    payments: [] as Payment[],
-    auditLogs: [] as AuditLog[],
-    editRequests: [] as EditRequest[],
-    loading: false,
-    isFetching: false,
-    error: null as string | null
-  }),
-  getters: {
-    // We compute totals in a map to make lookups O(1) in the UI
-    totals(state) {
-      const map = new Map<string, { due: number; paid: number }>()
-      
-      // Calculate dues
-      for (const p of state.payables) {
-        if (p.deleted_at) continue;
-        const current = map.get(p.profile_ledger_id) || { due: 0, paid: 0 }
-        current.due += Number(p.amount)
-        map.set(p.profile_ledger_id, current)
-      }
-      
-      // Calculate paids
-      for (const pay of state.payments) {
-        if (pay.deleted || pay.deleted_at) continue;
-        const current = map.get(pay.profile_ledger_id) || { due: 0, paid: 0 }
-        current.paid += Number(pay.amount)
-        map.set(pay.profile_ledger_id, current)
-      }
-      
-      return map
-    },
-    studentTotalDue: (state) => {
-      return (profile_ledger_id: string) => {
-        // In a real app we might rely on the SQL view, but for optimistic UI updates we can use this getter
-        const totals = state.payables
-          .filter(p => p.profile_ledger_id === profile_ledger_id && !p.deleted_at)
-          .reduce((sum, p) => sum + Number(p.amount), 0)
-        return totals;
-      }
-    },
-    studentTotalPaid: (state) => {
-      return (profile_ledger_id: string) => {
-        const totals = state.payments
-          .filter(p => p.profile_ledger_id === profile_ledger_id && !p.deleted && !p.deleted_at)
-          .reduce((sum, p) => sum + Number(p.amount), 0)
-        return totals;
-      }
-    }
-  },
-  actions: {
-    async fetchLedgerData() {
-      const authStore = useAuthStore()
-      if (!authStore.session?.access_token) return
-      
-      if (this.isFetching) return;
-      this.isFetching = true;
-      this.loading = true
-      this.error = null
-      
-      try {
-        const [
-          { data: students, error: err1 },
-          { data: payables, error: err2 },
-          { data: payments, error: err3 },
-          { data: auditLogs, error: err4 },
-          { data: editRequests, error: err5 }
-        ] = await Promise.all([
-          (supabase as any).from('profile_ledger').select('*').order('date_added', { ascending: false }),
-          (supabase as any).from('payables').select('*').order('date_added', { ascending: false }),
-          (supabase as any).from('transaction_records').select('*').order('date', { ascending: false }),
-          (supabase as any).from('audit_logs').select('*').order('timestamp', { ascending: false }),
-          (supabase as any).from('edit_requests').select('*').order('timestamp', { ascending: false })
-        ])
-
-        if (err1) throw err1
-        if (err2) throw err2
-        if (err3) throw err3
-        if (err4) throw err4
-        if (err5) throw err5
-
-        this.students = (students as Student[] | null)?.filter(s => !s.deleted_at) || []
-        this.payables = (payables as Payable[] | null)?.filter(p => !p.deleted_at) || []
-        this.payments = (payments as Payment[] | null)?.filter(p => !p.deleted && !p.deleted_at) || []
-        this.auditLogs = auditLogs || []
-        this.editRequests = editRequests || []
-      } catch (err: any) {
-        console.error('Failed to fetch ledger data:', err)
-        this.error = err.message || 'Unknown error occurred'
-        throw err;
-      } finally {
-        this.loading = false
-        this.isFetching = false
-      }
-    },
-    async addStudent(name: string, course: string, contact_number: string) {
-      try {
-        const { data, error } = await (supabase as any).from('profile_ledger').insert({
-          name,
-          course,
-          contact_number
-        }).select().maybeSingle()
-        
-        if (error) throw error
-        if (data) {
-          this.students.unshift(data)
-        }
-      } catch (err: any) {
-        console.error('Error adding student:', err);
-        throw err;
-      }
-    },
+  const fetchLedgerData = async () => {
+    const [studentsRes, payablesRes, paymentsRes, requestsRes, auditRes] = await Promise.all([
+      supabase.from('profile_ledger').select('*').order('name'),
+      supabase.from('payables').select('*'),
+      supabase.from('transaction_records').select('*').order('date', { ascending: false }),
+      supabase.from('edit_requests').select('*').order('timestamp', { ascending: false }),
+      supabase.from('audit_logs').select('*').order('timestamp', { ascending: false })
+    ])
     
-    async editStudent(id: string, name: string, course: string, contact_number: string) {
-      try {
-        const { data, error } = await (supabase as any).from('profile_ledger').update({
-          name,
-          course,
-          contact_number
-        }).eq('id', id).select().maybeSingle()
-        
-        if (error) throw error
-        if (data) {
-          const index = this.students.findIndex(s => s.id === id)
-          if (index !== -1) this.students[index] = data
-        }
-      } catch (err: any) {
-        console.error('Error editing student:', err);
-        throw err;
-      }
-    },
-    async deleteStudent(id: string) {
-      const student = this.students.find(s => s.id === id)
-      if (!student) return
-      
-      try {
-        // Soft delete
-        const { error } = await (supabase as any).from('profile_ledger').update({ deleted_at: new Date().toISOString() }).eq('id', id).select().maybeSingle()
-        if (error) throw error
-        
-        // Remove from local array or mark as deleted
-        this.students = this.students.filter(s => s.id !== id)
-      } catch (err: any) {
-        console.error('Error deleting student:', err);
-        throw err;
-      }
-    },
+    if (studentsRes.data) students.value = studentsRes.data
+    if (payablesRes.data) payables.value = payablesRes.data
+    if (paymentsRes.data) payments.value = paymentsRes.data
+    if (requestsRes.data) requests.value = requestsRes.data
+    if (auditRes.data) auditLogs.value = auditRes.data
+  }
 
-    async addPayable(profile_ledger_id: string, name: string, amount: number, deadline: string) {
-      try {
-        const { data, error } = await (supabase as any).from('payables').insert({
-          profile_ledger_id,
-          name,
-          amount,
-          deadline: deadline || null
-        }).select().maybeSingle()
-        
-        if (error) throw error
-        if (data) {
-          this.payables.unshift(data)
-        }
-      } catch (err: any) {
-        console.error('Error adding payable:', err);
-        throw err;
-      }
-    },
+  const studentTotalPaid = (studentId: string) => {
+    const studentPayables = payables.value.filter(p => p.student_id === studentId || p.profile_ledger_id === studentId)
+    const payableIds = studentPayables.map(p => p.id)
+    return payments.value
+      .filter(p => payableIds.includes(p.payable_id))
+      .reduce((sum, p) => sum + Number(p.amount), 0)
+  }
+
+  const studentTotalDue = (studentId: string) => {
+    return payables.value
+      .filter(p => p.student_id === studentId || p.profile_ledger_id === studentId)
+      .reduce((sum, p) => sum + Number(p.amount), 0)
+  }
+
+  const studentPayables = (studentId: string) => {
+    return payables.value.filter(p => p.student_id === studentId || p.profile_ledger_id === studentId)
+  }
+
+  const studentPayments = (studentId: string) => {
+    const sPayables = payables.value.filter(p => p.student_id === studentId || p.profile_ledger_id === studentId).map(p => p.id)
+    return payments.value.filter(p => sPayables.includes(p.payable_id))
+  }
+
+  const addStudent = async (name: string, course: string, contact_number: string) => {
+    const { data, error } = await supabase.from('profile_ledger').insert({
+      name, course, contact_number
+    }).select().single()
     
-    async deletePayable(id: string) {
-      const payable = this.payables.find(p => p.id === id)
-      if (!payable) return
-      
-      try {
-        // Soft delete
-        const { error } = await (supabase as any).from('payables').update({ deleted_at: new Date().toISOString() }).eq('id', id)
-        if (error) throw error
-        
-        this.payables = this.payables.filter(p => p.id !== id)
-      } catch (err: any) {
-        console.error('Error deleting payable:', err);
-        throw err;
-      }
-    },
+    if (error) throw error
+    if (data) students.value.push(data)
+  }
 
-    async recordPayment(profile_ledger_id: string, payable_id: string, amount: number, method: 'full' | 'partial', note: string) {
-      try {
-        // We no longer manually pass recorded_by; the DB trigger/default handles it via auth.uid()
-        const { data, error } = await (supabase as any).from('transaction_records').insert({
-          profile_ledger_id,
-          payable_id,
-          amount,
-          method,
-          note
-        }).select().maybeSingle()
-        
-        if (error) throw error
-        if (data) {
-          this.payments.unshift(data)
-        }
-      } catch (err: any) {
-        console.error('Error recording payment:', err);
-        throw err;
-      }
+  const addPayable = async (profile_ledger_id: string, name: string, amount: number, deadline: string) => {
+    const { data, error } = await supabase.from('payables').insert({
+      profile_ledger_id, name, amount, deadline
+    }).select().single()
+    
+    if (error) {
+      // Fallback in case column is named student_id
+      const retry = await supabase.from('payables').insert({ student_id: profile_ledger_id, name, amount, deadline }).select().single();
+      if (retry.error) throw retry.error;
+      if (retry.data) payables.value.push(retry.data)
+      return;
     }
-    // These legacy actions are now replaced by getters, keeping them as empty methods or returning getters for backward compatibility if needed.
-    // However, since we added getters with the same name, we should remove them here.
+    if (data) payables.value.push(data)
+  }
+
+  const recordPayment = async (profile_ledger_id: string, payable_id: string, amount: number, method: string, note: string) => {
+    const { data, error } = await supabase.from('transaction_records').insert({
+      profile_ledger_id, payable_id, amount, method, note
+    }).select().single()
+    
+    if (error) throw error
+    if (data) payments.value.unshift(data)
+  }
+
+  const getStudent = (id: string) => students.value.find(s => s.id === id)
+
+  const updateStudent = async (id: string, name: string, course: string, contact_number: string) => {
+    const { data, error } = await supabase.from('profile_ledger').update({ name, course, contact_number }).eq('id', id).select().single()
+    if (error) throw error
+    if (data) {
+      const idx = students.value.findIndex(s => s.id === id)
+      if (idx !== -1) students.value[idx] = data
+    }
+  }
+
+  const deleteStudent = async (id: string) => {
+    const { error } = await supabase.from('profile_ledger').delete().eq('id', id)
+    if (error) throw error
+    students.value = students.value.filter(s => s.id !== id)
+  }
+
+  const deletePayable = async (id: string) => {
+    const { error } = await supabase.from('payables').delete().eq('id', id)
+    if (error) throw error
+    payables.value = payables.value.filter(p => p.id !== id)
+  }
+
+  const deletePayment = async (id: string) => {
+    const { error } = await supabase.from('transaction_records').delete().eq('id', id)
+    if (error) throw error
+    payments.value = payments.value.filter(p => p.id !== id)
+  }
+
+  const requestEdit = async (targetType: string, targetId: string, reason: string) => {
+    const { data, error } = await supabase.from('edit_requests').insert({
+      payment_id: targetId, note: reason, status: 'pending'
+    }).select().single()
+    if (error) throw error
+    if (data) requests.value.unshift(data)
+  }
+
+  const approveRequest = async (id: string) => {
+    const { data, error } = await supabase.from('edit_requests').update({ status: 'approved' }).eq('id', id).select().single()
+    if (error) throw error
+    const idx = requests.value.findIndex(r => r.id === id)
+    if (idx !== -1) requests.value[idx] = data
+  }
+
+  const rejectRequest = async (id: string) => {
+    const { data, error } = await supabase.from('edit_requests').update({ status: 'rejected' }).eq('id', id).select().single()
+    if (error) throw error
+    const idx = requests.value.findIndex(r => r.id === id)
+    if (idx !== -1) requests.value[idx] = data
+  }
+
+  return {
+    students, payables, payments, auditLogs, requests, editRequests: requests,
+    fetchLedgerData, studentTotalPaid, studentTotalDue, studentPayables, studentPayments,
+    addStudent, addPayable, recordPayment, getStudent,
+    deletePayable, updateStudent, deleteStudent, deletePayment,
+    approveRequest, rejectRequest, requestEdit
   }
 })
