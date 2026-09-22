@@ -46,7 +46,7 @@ const navItems = computed(() => {
 </script>
 
 <template>
-  <div style="display: flex; flex-direction: column; min-height: 100vh; width: 100%; max-width: 100vw; overflow-x: hidden; background: #F8F9FA;">
+  <div style="display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; background: #F8F9FA;">
     <!-- Global Topbar -->
     <header class="app-topbar">
       <div style="display: flex; align-items: center; gap: 12px;">
@@ -62,12 +62,37 @@ const navItems = computed(() => {
           <span class="topbar-subtext" style="color: #6C757D; font-size: 0.95rem;">Student collections</span>
         </div>
       </div>
-      <div class="topbar-right" style="color: #6C757D; font-size: 0.85rem;">
-        Internal school finance record
+      
+      <div class="topbar-right" style="display: flex; align-items: center; gap: 16px;">
+        <span class="topbar-subtext" style="color: #6C757D; font-size: 0.85rem;">Internal school finance record</span>
+        <div style="display: flex; align-items: center; gap: 10px; border-left: 1px solid #E9ECEF; padding-left: 16px;">
+          <div :style="{
+            width: '30px', height: '30px', borderRadius: '50%', background: '#E9ECEF', flexShrink: 0,
+            backgroundImage: authStore.user?.user_metadata?.avatar ? `url(${authStore.user.user_metadata.avatar})` : 'none',
+            backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 'bold', fontSize: '0.8rem', color: '#495057'
+          }">
+            {{ !authStore.user?.user_metadata?.avatar ? ((authStore.user?.user_metadata?.display || authStore.user?.email || 'U').charAt(0).toUpperCase()) : '' }}
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: #2B3B4E; line-height: 1.2;">
+              {{ authStore.user?.user_metadata?.display || authStore.user?.email?.split('@')[0] }}
+            </span>
+            <span style="font-size: 0.75rem; color: #868E96; text-transform: capitalize; line-height: 1.2;">
+              {{ authStore.role }}
+            </span>
+          </div>
+          <button 
+            @click="handleSignOut" 
+            style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-left: 4px;"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </header>
 
-    <div style="display: flex; flex: 1; position: relative;">
+    <div style="display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; position: relative;">
       <!-- Mobile Overlay Backdrop -->
       <div 
         v-if="mobileMenuOpen" 
@@ -77,15 +102,15 @@ const navItems = computed(() => {
 
       <!-- Sidebar -->
       <aside :class="['app-sidebar', { 'mobile-open': mobileMenuOpen }]">
-        <div style="padding: 24px; padding-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 20px 24px 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
           <div>
-            <p style="font-weight: 700; font-size: 1.1rem; color: #2B3B4E; margin-bottom: 2px;">ETEEAP</p>
-            <p style="color: #6C757D; font-size: 0.85rem;">Ledger</p>
+            <p style="font-weight: 700; font-size: 1.1rem; color: #2B3B4E; margin: 0 0 2px 0;">ETEEAP</p>
+            <p style="color: #6C757D; font-size: 0.85rem; margin: 0;">Ledger</p>
           </div>
           <button class="mobile-close-btn" @click="mobileMenuOpen = false">&times;</button>
         </div>
         
-        <nav style="flex: 1; padding: 0 16px; display: flex; flex-direction: column; gap: 4px;">
+        <nav style="flex: 1; overflow-y: auto; padding: 0 16px; display: flex; flex-direction: column; gap: 4px;">
           <RouterLink 
             v-for="item in navItems" 
             :key="item.key"
@@ -105,15 +130,15 @@ const navItems = computed(() => {
           </RouterLink>
         </nav>
         
-        <div style="padding: 24px 16px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="padding: 16px; border-top: 1px solid #E9ECEF; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; background: white;">
           <button 
             @click="showAccountSettings = true; mobileMenuOpen = false"
-            style="width: 100%; padding: 10px; background: white; border: 1px solid #DEE2E6; border-radius: 6px; color: #495057; font-size: 0.85rem; font-weight: 600; cursor: pointer; min-height: 44px;"
+            style="width: 100%; padding: 8px 12px; background: white; border: 1px solid #DEE2E6; border-radius: 6px; color: #495057; font-size: 0.85rem; font-weight: 600; cursor: pointer; min-height: 40px;"
           >
             Account settings
           </button>
           
-          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 4px;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 4px;">
             <div :style="{
               width: '36px', height: '36px', borderRadius: '50%', background: '#E9ECEF', flexShrink: 0,
               backgroundImage: authStore.user?.user_metadata?.avatar ? `url(${authStore.user.user_metadata.avatar})` : 'none',
@@ -132,17 +157,15 @@ const navItems = computed(() => {
             </div>
           </div>
           
-          <button @click="handleSignOut" style="width: 100%; padding: 10px; background: white; border: 1px solid #DEE2E6; border-radius: 6px; color: #495057; font-size: 0.85rem; font-weight: 600; cursor: pointer; min-height: 44px;">
+          <button @click="handleSignOut" style="width: 100%; padding: 8px 12px; background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; min-height: 40px;">
             Sign out
           </button>
         </div>
       </aside>
 
       <!-- Main Content -->
-      <main style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #F8F9FA;">
-        <div style="flex: 1; overflow-y: auto;">
-          <RouterView />
-        </div>
+      <main style="flex: 1; height: 100%; overflow-y: auto; background: #F8F9FA;">
+        <RouterView />
       </main>
     </div>
     
