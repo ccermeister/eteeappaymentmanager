@@ -14,6 +14,11 @@ const showAddModal = ref(false)
 const submitting = ref(false)
 const form = ref({ name: '', course: '', contact_number: '' })
 
+// Edit Student Modal state
+const showEditStudentModal = ref(false)
+const editStudentForm = ref({ id: '', name: '', course: '', contact_number: '' })
+const editingStudent = ref(false)
+
 // Pay Modal state
 const showPayModal = ref(false)
 const selectedStudent = ref<any>(null)
@@ -47,6 +52,35 @@ const availablePayables = computed(() => {
   if (!selectedStudent.value) return []
   return getStudentUnpaidPayables(selectedStudent.value.id)
 })
+
+const openEditStudentModal = (student: any) => {
+  editStudentForm.value = {
+    id: student.id,
+    name: student.name || '',
+    course: student.course || '',
+    contact_number: student.contact_number || ''
+  }
+  showEditStudentModal.value = true
+}
+
+const handleSaveEditStudent = async (e: Event) => {
+  e.preventDefault()
+  if (!editStudentForm.value.id) return
+  editingStudent.value = true
+  try {
+    await ledgerStore.updateStudent(
+      editStudentForm.value.id,
+      editStudentForm.value.name.trim(),
+      editStudentForm.value.course.trim(),
+      editStudentForm.value.contact_number.trim()
+    )
+    showEditStudentModal.value = false
+  } catch (error: any) {
+    alert("Failed to update student: " + (error.message || 'Unknown error'))
+  } finally {
+    editingStudent.value = false
+  }
+}
 
 const openPayModal = (student: any) => {
   selectedStudent.value = student
@@ -154,12 +188,12 @@ const handleRecordPayment = async (e: Event) => {
               <th>Total due</th>
               <th>Status</th>
               <th>Progress</th>
-              <th v-if="authStore.can('pay')">Action</th>
+              <th v-if="authStore.can('pay') || authStore.can('edit')">Action</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="filteredStudents.length === 0">
-              <td :colspan="authStore.can('pay') ? 6 : 5" class="empty-state">
+              <td :colspan="(authStore.can('pay') || authStore.can('edit')) ? 6 : 5" class="empty-state">
                 No students match yet.
               </td>
             </tr>
@@ -209,20 +243,23 @@ const handleRecordPayment = async (e: Event) => {
                 </template>
                 <span v-else class="text-light">—</span>
               </td>
-              <td v-if="authStore.can('pay')">
-                <button 
-                  v-if="hasUnpaidPayables(student.id)" 
-                  @click="openPayModal(student)" 
-                  style="background: #2B3B4E; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;"
-                >
-                  Pay
-                </button>
-                <span v-else-if="ledgerStore.studentTotalDue(student.id) > 0" style="font-size: 0.75rem; color: #2F9E44; font-weight: 600;">
-                  Cleared
-                </span>
-                <span v-else style="font-size: 0.75rem; color: #ADB5BD;">
-                  No payables
-                </span>
+              <td v-if="authStore.can('pay') || authStore.can('edit')">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button 
+                    v-if="authStore.can('edit')"
+                    @click="openEditStudentModal(student)" 
+                    style="background: white; border: 1px solid #DEE2E6; color: #495057; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 500;"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    v-if="authStore.can('pay') && hasUnpaidPayables(student.id)" 
+                    @click="openPayModal(student)" 
+                    style="background: #2B3B4E; color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;"
+                  >
+                    Pay
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -256,6 +293,38 @@ const handleRecordPayment = async (e: Event) => {
             <button type="button" class="btn btn-secondary" @click="showAddModal = false">Cancel</button>
             <button type="submit" class="btn btn-primary" :disabled="submitting">
               {{ submitting ? 'Adding...' : 'Add student' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Student Profile Modal -->
+    <div v-if="showEditStudentModal" class="modal-overlay">
+      <div class="modal-content animate-scale-in" style="max-width: 480px;">
+        <header class="modal-header">
+          <h3 class="modal-title">Edit student profile</h3>
+          <button class="btn-ghost" @click="showEditStudentModal = false">&times;</button>
+        </header>
+        
+        <form class="modal-body" @submit="handleSaveEditStudent">
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input required v-model="editStudentForm.name" type="text" class="form-input" placeholder="e.g. Jane Doe" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Course (Program)</label>
+            <input v-model="editStudentForm.course" type="text" class="form-input" placeholder="e.g. BSIT" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact number</label>
+            <input v-model="editStudentForm.contact_number" type="text" class="form-input" placeholder="e.g. 09123456789" />
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" @click="showEditStudentModal = false">Cancel</button>
+            <button type="submit" class="btn btn-primary" :disabled="editingStudent">
+              {{ editingStudent ? 'Saving...' : 'Save changes' }}
             </button>
           </div>
         </form>
