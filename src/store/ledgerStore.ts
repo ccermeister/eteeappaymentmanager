@@ -102,13 +102,29 @@ export const useLedgerStore = defineStore('ledger', () => {
     payables.value = payables.value.filter(p => p.id !== id)
   }
 
+  const updatePayable = async (id: string, name: string, amount: number, deadline: string) => {
+    const payload: any = { name, amount }
+    if (deadline && deadline.trim() !== '') {
+      payload.deadline = deadline
+    } else {
+      payload.deadline = null
+    }
+
+    const { data, error } = await supabase.from('payables').update(payload).eq('id', id).select().single()
+    if (error) throw error
+    if (data) {
+      const idx = payables.value.findIndex(p => p.id === id)
+      if (idx !== -1) payables.value[idx] = data
+    }
+  }
+
   const deletePayment = async (id: string) => {
     const { error } = await supabase.from('transaction_records').delete().eq('id', id)
     if (error) throw error
     payments.value = payments.value.filter(p => p.id !== id)
   }
 
-  const requestEdit = async (targetType: string, targetId: string, reason: string) => {
+  const requestEdit = async (targetId: string, reason: string) => {
     const { data, error } = await supabase.from('edit_requests').insert({
       payment_id: targetId, note: reason, status: 'pending'
     }).select().single()
@@ -139,7 +155,7 @@ export const useLedgerStore = defineStore('ledger', () => {
     students, payables, payments, auditLogs, requests, editRequests: requests,
     fetchLedgerData, studentTotalPaid, studentTotalDue, studentPayables, studentPayments,
     addStudent, addPayable, recordPayment, getStudent,
-    deletePayable, updateStudent, deleteStudent, deletePayment,
+    deletePayable, updatePayable, updateStudent, deleteStudent, deletePayment,
     approveRequest, rejectRequest, requestEdit
   }
 })

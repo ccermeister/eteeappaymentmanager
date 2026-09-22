@@ -66,6 +66,17 @@ const handlePay = async (payable: any) => {
   }
 }
 
+const handleRequestEdit = async (paymentId: string) => {
+  const reason = window.prompt("Reason for edit request:")
+  if (!reason) return
+  try {
+    await ledgerStore.requestEdit(paymentId, reason)
+    alert("Edit request submitted to Admin.")
+  } catch (error: any) {
+    alert("Failed to request edit: " + (error.message || 'Unknown error'))
+  }
+}
+
 const printHistory = () => {
   const printWindow = window.open("", "_blank", "width=900,height=700")
   if (!printWindow || !student.value) return
@@ -252,7 +263,7 @@ const printHistory = () => {
                 </div>
                 <template v-else-if="authStore.can('requestEdit')">
                   <span v-if="ledgerStore.editRequests.find(r => r.payment_id === p.id && r.status === 'pending')" style="font-size: 0.75rem; color: #ADB5BD;">Edit requested</span>
-                  <button v-else style="background: transparent; border: 1px solid #DEE2E6; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Request edit</button>
+                  <button v-else @click="handleRequestEdit(p.id)" style="background: transparent; border: 1px solid #DEE2E6; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Request edit</button>
                 </template>
               </td>
             </tr>

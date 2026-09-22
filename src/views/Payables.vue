@@ -11,6 +11,9 @@ const showAddModal = ref(false)
 const form = ref({ student_id: '', name: '', amount: '', deadline: '' })
 const submitting = ref(false)
 
+const showEditModal = ref(false)
+const editForm = ref({ id: '', name: '', amount: '', deadline: '' })
+
 const searchQuery = ref('')
 const sortKey = ref('deadline')
 const sortOrder = ref('asc')
@@ -71,6 +74,54 @@ const handleAddPayable = async () => {
     form.value = { student_id: '', name: '', amount: '', deadline: '' }
   } catch (error: any) {
     alert("Failed to add payable: " + (error.message || 'Unknown error'))
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handlePay = async (payable: any) => {
+  const remaining = Math.max(0, payable.amount - payable.collected)
+  
+  const amountStr = window.prompt(`Enter amount to pay for ${payable.name} (Remaining: ₱${remaining}):`)
+  if (!amountStr) return
+  const amount = Number(amountStr)
+  if (isNaN(amount) || amount <= 0) return alert("Invalid amount")
+  
+  if (amount > remaining) {
+    return alert("Payment exceeds remaining balance.")
+  }
+
+  const method = amount >= remaining ? 'full' : 'partial'
+  const note = window.prompt("Enter note (optional):")
+  
+  try {
+    await ledgerStore.recordPayment(payable.profile_ledger_id, payable.id, amount, method, note || "")
+    alert("Payment recorded successfully!")
+  } catch (error: any) {
+    alert("Failed to record payment: " + (error.message || 'Unknown error'))
+  }
+}
+
+const openEdit = (payable: any) => {
+  editForm.value = { 
+    id: payable.id, 
+    name: payable.name, 
+    amount: payable.amount, 
+    deadline: payable.deadline || '' 
+  }
+  showEditModal.value = true
+}
+
+const handleEditPayable = async () => {
+  if (!editForm.value.name || !editForm.value.amount) {
+    return alert('Please fill in all required fields.')
+  }
+  submitting.value = true
+  try {
+    await ledgerStore.updatePayable(editForm.value.id, editForm.value.name, Number(editForm.value.amount), editForm.value.deadline)
+    showEditModal.value = false
+  } catch (error: any) {
+    alert("Failed to update payable: " + (error.message || 'Unknown error'))
   } finally {
     submitting.value = false
   }
@@ -151,7 +202,8 @@ const handleDelete = async (id: string) => {
               </td>
               <td style="padding: 16px 24px;">
                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                  <button v-if="authStore.can('edit')" style="background: transparent; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; color: #495057;">Edit</button>
+                  <button v-if="authStore.can('pay') && p.collected < p.amount" @click="handlePay(p)" style="background: #2B3B4E; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">Pay</button>
+                  <button v-if="authStore.can('edit')" @click="openEdit(p)" style="background: transparent; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; color: #495057;">Edit</button>
                   <button v-if="authStore.can('delete') || (authStore.role === 'treasurer' && p.collected === 0)" @click="handleDelete(p.id)" style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;">Delete</button>
                 </div>
               </td>
@@ -199,6 +251,36 @@ const handleDelete = async (id: string) => {
             <button class="btn btn-secondary" @click="showAddModal = false" :disabled="submitting">Cancel</button>
             <button class="btn btn-primary" @click="handleAddPayable" :disabled="submitting">
               {{ submitting ? 'Assigning...' : 'Assign Payable' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Payable Modal -->
+    <div v-if="showEditModal" class="modal-overlay">
+      <div class="modal-content animate-scale-in">
+        <header class="modal-header">
+          <h3 class="modal-title">Edit Payable</h3>
+          <button class="btn-ghost" @click="showEditModal = false">&times;</button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Payable Name</label>
+            <input type="text" v-model="editForm.name" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Amount (₱)</label>
+            <input type="number" v-model="editForm.amount" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline (Optional)</label>
+            <input type="date" v-model="editForm.deadline" class="form-input" />
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" @click="showEditModal = false" :disabled="submitting">Cancel</button>
+            <button class="btn btn-primary" @click="handleEditPayable" :disabled="submitting">
+              {{ submitting ? 'Saving...' : 'Save Changes' }}
             </button>
           </div>
         </div>
