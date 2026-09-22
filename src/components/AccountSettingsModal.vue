@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuthStore } from '../store/authStore'
 
 const props = defineProps<{
@@ -9,20 +9,57 @@ const props = defineProps<{
 
 const authStore = useAuthStore()
 
-// Fallback if no user is present
-const userDisplay = authStore.user?.user_metadata?.display || authStore.user?.email?.split('@')[0] || ''
-const displayName = ref(userDisplay)
-
+const displayName = ref('')
+const avatarPreview = ref('')
+const selectedFile = ref<File | null>(null)
 const loading = ref(false)
+const errorMsg = ref('')
+
+const syncFromUser = () => {
+  if (authStore.user) {
+    displayName.value = authStore.user.user_metadata?.display || authStore.user.email?.split('@')[0] || ''
+    avatarPreview.value = authStore.user.user_metadata?.avatar || ''
+  }
+}
+
+watch(() => props.isOpen, (newVal) => {
+  if (newVal) {
+    syncFromUser()
+    errorMsg.value = ''
+    selectedFile.value = null
+  }
+}, { immediate: true })
+
+watch(() => authStore.user, () => {
+  syncFromUser()
+})
+
+const handleFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    selectedFile.value = file
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      avatarPreview.value = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
 
 const handleSave = async (e: Event) => {
   e.preventDefault()
   loading.value = true
-  // Mock save logic, since we're just doing UI mostly
-  setTimeout(() => {
+  errorMsg.value = ''
+  
+  try {
+    await authStore.updateProfile(displayName.value.trim(), avatarPreview.value)
     loading.value = false
     props.onClose()
-  }, 500)
+  } catch (err: any) {
+    errorMsg.value = err.message || 'Failed to update account settings.'
+    loading.value = false
+  }
 }
 </script>
 
@@ -39,16 +76,17 @@ const handleSave = async (e: Event) => {
         <!-- Profile Preview -->
         <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #E9ECEF;">
           <div :style="{
-            width: '48px', height: '48px', borderRadius: '50%', background: '#E9ECEF',
-            backgroundImage: authStore.user?.user_metadata?.avatar ? `url(${authStore.user.user_metadata.avatar})` : 'none',
-            backgroundSize: 'cover', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 'bold', fontSize: '1.25rem', color: '#495057'
+            width: '56px', height: '56px', borderRadius: '50%', background: '#E9ECEF', flexShrink: 0,
+            backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none',
+            backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 'bold', fontSize: '1.4rem', color: '#495057'
           }">
-            {{ !authStore.user?.user_metadata?.avatar ? authStore.user?.email?.charAt(0).toUpperCase() : '' }}
+            {{ !avatarPreview ? ((displayName || authStore.user?.email || 'U').charAt(0).toUpperCase()) : '' }}
           </div>
           <div>
-            <div style="font-size: 1rem; font-weight: 600; color: #2B3B4E;">{{ authStore.user?.email }}</div>
-            <div style="font-size: 0.85rem; color: #868E96; text-transform: capitalize;">{{ authStore.role }}</div>
+            <div style="font-size: 1rem; font-weight: 600; color: #2B3B4E;">{{ displayName || authStore.user?.email }}</div>
+            <div style="font-size: 0.85rem; color: #868E96;">{{ authStore.user?.email }}</div>
+            <div style="font-size: 0.75rem; color: #6C757D; text-transform: capitalize; margin-top: 2px;">Role: <strong>{{ authStore.role }}</strong></div>
           </div>
         </div>
 
@@ -60,6 +98,8 @@ const handleSave = async (e: Event) => {
             <input 
               type="text"
               v-model="displayName"
+              required
+              placeholder="Enter display name"
               style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;"
             />
           </div>
@@ -70,12 +110,18 @@ const handleSave = async (e: Event) => {
             </label>
             <input 
               type="file"
-              style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none; background: white;"
+              accept="image/*"
+              @change="handleFileChange"
+              style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.9rem; outline: none; background: white;"
             />
           </div>
           
+          <p v-if="errorMsg" style="color: #DC3545; font-size: 0.85rem; margin: 0;">
+            {{ errorMsg }}
+          </p>
+
           <p style="font-size: 0.75rem; color: #868E96; margin: 4px 0 16px;">
-            Your profile is saved to your account.
+            Changes to your display name or photo will update your profile in the application header and sidebar.
           </p>
 
           <div style="display: flex; justify-content: flex-end; gap: 12px;">
@@ -89,7 +135,11 @@ const handleSave = async (e: Event) => {
             <button 
               type="submit" 
               :disabled="loading"
-              style="background: #2B3B4E; border: none; color: white; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer;"
+              :style="{
+                background: '#2B3B4E', border: 'none', color: 'white', padding: '10px 16px',
+                borderRadius: '6px', fontWeight: 600, fontSize: '0.9rem', cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1
+              }"
             >
               {{ loading ? 'Saving...' : 'Save settings' }}
             </button>

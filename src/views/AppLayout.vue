@@ -92,12 +92,12 @@ const navItems = computed(() => {
           
           <div style="display: flex; align-items: center; gap: 12px; padding: 8px 4px;">
             <div :style="{
-              width: '36px', height: '36px', borderRadius: '50%', background: '#E9ECEF',
+              width: '36px', height: '36px', borderRadius: '50%', background: '#E9ECEF', flexShrink: 0,
               backgroundImage: authStore.user?.user_metadata?.avatar ? `url(${authStore.user.user_metadata.avatar})` : 'none',
               backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 'bold', color: '#495057'
             }">
-              {{ !authStore.user?.user_metadata?.avatar ? authStore.user?.email?.charAt(0).toUpperCase() : '' }}
+              {{ !authStore.user?.user_metadata?.avatar ? ((authStore.user?.user_metadata?.display || authStore.user?.email || 'U').charAt(0).toUpperCase()) : '' }}
             </div>
             <div style="overflow: hidden;">
               <div style="font-size: 0.85rem; font-weight: 600; color: #2B3B4E; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">

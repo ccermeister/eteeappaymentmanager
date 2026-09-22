@@ -57,5 +57,23 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = data.session?.user || null
   }
 
-  return { user, loading, role, can, initialize, signOut, signIn }
+  const updateProfile = async (displayName: string, avatarUrl?: string) => {
+    const userMetadata: Record<string, any> = {
+      ...user.value?.user_metadata,
+      display: displayName
+    }
+    if (avatarUrl !== undefined && avatarUrl !== '') {
+      userMetadata.avatar = avatarUrl
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      data: userMetadata
+    })
+    if (error) throw error
+    if (data.user) {
+      user.value = data.user
+    }
+  }
+
+  return { user, loading, role, can, initialize, signOut, signIn, updateProfile }
 })
