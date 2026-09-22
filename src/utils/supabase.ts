@@ -1,10 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = `${window.location.origin}/supabase`; // Full URL required by supabase-js validation
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ezybifdvihklonpntabw.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  global: {
-    fetch: (...args) => fetch(...args)
-  }
-});
+export const supabase = createClient(supabaseUrl, supabaseKey);
