@@ -180,24 +180,24 @@ const printHistory = () => {
   <div v-if="!student" style="color: #6C757D; padding: 32px;">Student not found.</div>
   
   <div v-else class="animate-fade-in" style="display: flex; flex-direction: column; height: 100%;">
-    <header style="background: white; padding: 24px 32px; border-bottom: 1px solid #E9ECEF; display: flex; align-items: center; justify-content: space-between;">
-      <h2 style="font-size: 1.5rem; font-weight: 600; color: #2B3B4E;">Student profile</h2>
-      <button v-if="authStore.can('create')" @click="handleAddPayable" style="background: #2B3B4E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+    <header class="detail-header">
+      <h2 style="font-size: 1.5rem; font-weight: 600; color: #2B3B4E; margin: 0;">Student profile</h2>
+      <button v-if="authStore.can('create')" @click="handleAddPayable" class="btn btn-primary" style="font-size: 0.85rem; font-weight: 600;">
         + Add payable
       </button>
     </header>
 
-    <div style="padding: 32px;">
+    <div class="detail-body">
       <a @click="router.back()" style="cursor: pointer; color: #868E96; font-size: 0.85rem; margin-bottom: 16px; display: inline-block; text-decoration: none;">&larr; Back to students</a>
       
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
-        <div>
+      <div class="student-info-row">
+        <div style="flex: 1; width: 100%;">
           <h3 style="font-size: 1.75rem; color: #2B3B4E; margin-bottom: 4px;">{{ student.name }}</h3>
           <p style="color: #6C757D; font-size: 0.95rem; margin-bottom: 16px;">
             {{ student.course || "No course on file" }} {{ student.contact_number ? " · " + student.contact_number : "" }}
           </p>
           
-          <div style="width: 280px; height: 6px; background: #E9ECEF; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+          <div class="progress-bar-container">
             <div :style="{ width: `${Math.min(pct, 100)}%`, height: '100%', background: '#2B3B4E', transition: 'width 0.3s ease' }"></div>
           </div>
           <p style="font-size: 0.85rem; color: #6C757D;">
@@ -205,14 +205,14 @@ const printHistory = () => {
           </p>
         </div>
         
-        <div style="display: flex; gap: 8px;">
-          <button v-if="activeTab === 'history'" @click="printHistory" style="background: white; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #495057;">Print PDF</button>
-          <button v-if="authStore.can('edit')" @click="handleOpenEditModal" style="background: white; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #495057;">Edit profile</button>
-          <button v-if="authStore.can('delete')" @click="handleDeleteStudent" style="background: #FFF5F5; border: 1px solid #FFC9C9; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #E03131;">Delete</button>
+        <div class="action-btn-group">
+          <button v-if="activeTab === 'history'" @click="printHistory" class="btn btn-secondary">Print PDF</button>
+          <button v-if="authStore.can('edit')" @click="handleOpenEditModal" class="btn btn-secondary">Edit profile</button>
+          <button v-if="authStore.can('delete')" @click="handleDeleteStudent" style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 600;">Delete</button>
         </div>
       </div>
 
-      <div style="display: flex; gap: 24px; border-bottom: 1px solid #E9ECEF; margin-bottom: 24px;">
+      <div class="tab-nav">
         <button 
           @click="activeTab = 'summary'"
           :style="{ padding: '12px 4px', background: 'none', border: 'none', borderBottom: activeTab === 'summary' ? '2px solid #2B3B4E' : '2px solid transparent', color: activeTab === 'summary' ? '#2B3B4E' : '#868E96', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }"
@@ -227,36 +227,36 @@ const printHistory = () => {
         </button>
       </div>
 
-      <div v-if="activeTab === 'summary'" style="background: white; border-radius: 8px; border: 1px solid #E9ECEF; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <div v-if="activeTab === 'summary'" class="table-card" style="background: white; border-radius: 8px; border: 1px solid #E9ECEF; overflow-x: auto; width: 100%;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead style="background: #F1F3F5; font-size: 0.75rem; text-transform: uppercase; color: #6C757D; letter-spacing: 0.05em;">
             <tr>
-              <th style="padding: 16px 24px; font-weight: 600;">Payable</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Price</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Paid</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Remaining</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Status</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Deadline</th>
-              <th style="padding: 16px 24px; font-weight: 600;"></th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Payable</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Price</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Paid</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Remaining</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Status</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Deadline</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;"></th>
             </tr>
           </thead>
           <tbody style="font-size: 0.9rem; color: #495057;">
             <tr v-for="(pb, idx) in studentPayables" :key="pb.id" :style="{ borderTop: idx > 0 ? '1px solid #E9ECEF' : 'none' }">
-              <td style="padding: 16px 24px; font-weight: 500; color: #2B3B4E;">{{ pb.name }}</td>
-              <td style="padding: 16px 24px;">{{ peso(pb.amount) }}</td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; font-weight: 500; color: #2B3B4E; white-space: nowrap;">{{ pb.name }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">{{ peso(pb.amount) }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 {{ (() => {
                   const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === pb.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
                   return peso(paidAmt)
                 })() }}
               </td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 {{ (() => {
                   const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === pb.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
                   return peso(Math.max(0, pb.amount - paidAmt))
                 })() }}
               </td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <span :style="(() => {
                   const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === pb.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
                   const statusVal = paidAmt >= pb.amount ? 'paid' : (paidAmt > 0 ? 'partial' : 'unpaid')
@@ -273,10 +273,10 @@ const printHistory = () => {
                   })() }}
                 </span>
               </td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <span :style="{ ...getDeadlineInfo(pb.deadline).style, fontSize: '0.85rem' }">{{ getDeadlineInfo(pb.deadline).label }}</span>
               </td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <button @click="handlePay(pb)" v-if="authStore.can('pay') && (() => {
                   const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === pb.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
                   return paidAmt < pb.amount
@@ -290,33 +290,33 @@ const printHistory = () => {
         </table>
       </div>
 
-      <div v-else style="background: white; border-radius: 8px; border: 1px solid #E9ECEF; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <div v-else class="table-card" style="background: white; border-radius: 8px; border: 1px solid #E9ECEF; overflow-x: auto; width: 100%;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead style="background: #F1F3F5; font-size: 0.75rem; text-transform: uppercase; color: #6C757D; letter-spacing: 0.05em;">
             <tr>
-              <th style="padding: 16px 24px; font-weight: 600;">Date</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Payable</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Amount</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Type</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Recorded by</th>
-              <th style="padding: 16px 24px; font-weight: 600;">Note</th>
-              <th style="padding: 16px 24px; font-weight: 600;"></th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Date</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Payable</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Amount</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Type</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Recorded by</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;">Note</th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;"></th>
             </tr>
           </thead>
           <tbody style="font-size: 0.9rem; color: #495057;">
             <tr v-for="(p, idx) in payments" :key="p.id" :style="{ borderTop: idx > 0 ? '1px solid #E9ECEF' : 'none' }">
-              <td style="padding: 16px 24px;">{{ fmtDate(p.date) }}</td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">{{ fmtDate(p.date) }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 {{ (() => {
                   const payable = ledgerStore.payables.find(pb => pb.id === p.payable_id)
                   return payable?.name || "(removed)"
                 })() }}
               </td>
-              <td style="padding: 16px 24px; font-weight: 600; color: #2F9E44;">{{ peso(p.amount) }}</td>
-              <td style="padding: 16px 24px;">{{ p.method === 'full' ? 'Full' : 'Partial' }}</td>
-              <td style="padding: 16px 24px;">{{ p.recorded_by }}</td>
-              <td style="padding: 16px 24px;">{{ p.note || '—' }}</td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; font-weight: 600; color: #2F9E44; white-space: nowrap;">{{ peso(p.amount) }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">{{ p.method === 'full' ? 'Full' : 'Partial' }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">{{ p.recorded_by }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">{{ p.note || '—' }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <div v-if="authStore.can('delete')" style="display: flex; gap: 8px;">
                   <button @click="handleDeletePayment(p.id)" style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Del</button>
                 </div>
@@ -335,30 +335,30 @@ const printHistory = () => {
     </div>
 
     <!-- Edit Student Modal -->
-    <div v-if="showEditStudentModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(33, 37, 41, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-      <div style="background: white; width: 100%; max-width: 480px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column;">
-        <div style="padding: 20px 24px; border-bottom: 1px solid #E9ECEF; display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="font-size: 1.25rem; font-weight: 600; color: #2B3B4E; margin: 0;">Edit student profile</h3>
-          <button @click="showEditStudentModal = false" style="background: none; border: none; font-size: 1.25rem; color: #ADB5BD; cursor: pointer;">&times;</button>
+    <div v-if="showEditStudentModal" class="modal-overlay">
+      <div class="modal-content animate-scale-in" style="max-width: 480px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Edit student profile</h3>
+          <button @click="showEditStudentModal = false" class="btn-ghost">&times;</button>
         </div>
         
-        <form @submit="handleSaveEditStudent" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-          <div>
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #495057; margin-bottom: 6px;">Full name</label>
-            <input required v-model="editStudentForm.name" type="text" style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;" />
+        <form @submit="handleSaveEditStudent" class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input required v-model="editStudentForm.name" type="text" class="form-input" />
           </div>
-          <div>
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #495057; margin-bottom: 6px;">Course (Program)</label>
-            <input v-model="editStudentForm.course" type="text" style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;" placeholder="e.g. BSIT" />
+          <div class="form-group">
+            <label class="form-label">Course (Program)</label>
+            <input v-model="editStudentForm.course" type="text" class="form-input" placeholder="e.g. BSIT" />
           </div>
-          <div>
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #495057; margin-bottom: 6px;">Contact number</label>
-            <input v-model="editStudentForm.contact_number" type="text" style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;" placeholder="e.g. 09123456789" />
+          <div class="form-group">
+            <label class="form-label">Contact number</label>
+            <input v-model="editStudentForm.contact_number" type="text" class="form-input" placeholder="e.g. 09123456789" />
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
-            <button type="button" @click="showEditStudentModal = false" style="background: white; border: 1px solid #DEE2E6; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; color: #495057; cursor: pointer;">Cancel</button>
-            <button type="submit" :disabled="savingEdit" style="background: #2B3B4E; border: none; color: white; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer;">
+          <div class="modal-actions">
+            <button type="button" @click="showEditStudentModal = false" class="btn btn-secondary">Cancel</button>
+            <button type="submit" :disabled="savingEdit" class="btn btn-primary">
               {{ savingEdit ? 'Saving...' : 'Save changes' }}
             </button>
           </div>
@@ -367,3 +367,76 @@ const printHistory = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.detail-header {
+  background: white;
+  padding: 24px 32px;
+  border-bottom: 1px solid #E9ECEF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-body {
+  padding: 32px;
+}
+
+.student-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.progress-bar-container {
+  width: 280px;
+  height: 6px;
+  background: #E9ECEF;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.action-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-nav {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #E9ECEF;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .detail-header {
+    padding: 16px 20px;
+  }
+
+  .detail-body {
+    padding: 16px 20px;
+  }
+
+  .student-info-row {
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar-container {
+    width: 100%;
+  }
+
+  .action-btn-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .tab-nav {
+    gap: 16px;
+    overflow-x: auto;
+  }
+}
+</style>

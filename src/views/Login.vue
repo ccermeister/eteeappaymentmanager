@@ -27,9 +27,9 @@ const handleLogin = async (e: Event) => {
 </script>
 
 <template>
-  <div style="display: flex; min-height: 100vh; width: 100%; background: #F8F9FA;">
+  <div class="login-wrapper">
     <!-- Left Visual Side -->
-    <div style="flex: 1; display: flex; flex-direction: column; padding: 64px; justify-content: center;">
+    <div class="login-visual-side">
       <div style="max-width: 600px; margin: 0 auto; width: 100%;">
         <p style="color: #6C757D; font-size: 0.875rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px;">
           ETEEAP Batch 2026-2027
@@ -46,8 +46,8 @@ const handleLogin = async (e: Event) => {
     </div>
 
     <!-- Right Form Side -->
-    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 64px;">
-      <div style="background: white; border-radius: 12px; padding: 48px; width: 100%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+    <div class="login-form-side">
+      <div class="login-card">
         <header style="margin-bottom: 32px;">
           <p style="color: #ADB5BD; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px;">
             ETEEAP OFFICERS
@@ -69,7 +69,7 @@ const handleLogin = async (e: Event) => {
               type="email" 
               v-model="email" 
               required 
-              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #DEE2E6; font-size: 1rem; color: #212529; outline: none; transition: border-color 0.2s;"
+              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #DEE2E6; font-size: 1rem; color: #212529; outline: none; transition: border-color 0.2s; min-height: 44px;"
               @focus="($event.target as HTMLInputElement).style.borderColor = '#343A40'"
               @blur="($event.target as HTMLInputElement).style.borderColor = '#DEE2E6'"
             />
@@ -83,7 +83,7 @@ const handleLogin = async (e: Event) => {
               type="password" 
               v-model="password" 
               required 
-              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #DEE2E6; font-size: 1rem; color: #212529; outline: none; transition: border-color 0.2s;"
+              style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #DEE2E6; font-size: 1rem; color: #212529; outline: none; transition: border-color 0.2s; min-height: 44px;"
               @focus="($event.target as HTMLInputElement).style.borderColor = '#343A40'"
               @blur="($event.target as HTMLInputElement).style.borderColor = '#DEE2E6'"
             />
@@ -98,7 +98,7 @@ const handleLogin = async (e: Event) => {
             :disabled="loading"
             :style="{
               width: '100%', padding: '14px', background: '#343A40', color: 'white', border: 'none',
-              borderRadius: '8px', fontSize: '1rem', fontWeight: 600,
+              borderRadius: '8px', fontSize: '1rem', fontWeight: 600, minHeight: '48px',
               cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, marginTop: '8px'
             }"
           >
@@ -113,3 +113,56 @@ const handleLogin = async (e: Event) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.login-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: #F8F9FA;
+}
+
+.login-visual-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 64px;
+  justify-content: center;
+}
+
+.login-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px;
+}
+
+.login-card {
+  background: white;
+  border-radius: 12px;
+  padding: 48px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+  }
+
+  .login-visual-side {
+    display: none;
+  }
+
+  .login-form-side {
+    padding: 24px 16px;
+  }
+
+  .login-card {
+    padding: 28px 20px;
+    border-radius: 10px;
+  }
+}
+</style>

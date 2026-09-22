@@ -143,15 +143,15 @@ const handleDelete = async (id: string) => {
 
 <template>
   <div class="animate-fade-in" style="display: flex; flex-direction: column; height: 100%;">
-    <header style="background: white; padding: 24px 32px; border-bottom: 1px solid #E9ECEF; display: flex; align-items: center; justify-content: space-between;">
-      <h2 style="font-size: 1.5rem; font-weight: 600; color: #2B3B4E;">All Payables</h2>
+    <header class="payables-header">
+      <h2 style="font-size: 1.5rem; font-weight: 600; color: #2B3B4E; margin: 0;">All Payables</h2>
       <button v-if="authStore.can('create')" class="btn btn-primary" @click="showAddModal = true">
         + Add Payable
       </button>
     </header>
 
-    <div style="padding: 32px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div class="payables-body">
+      <div class="payables-toolbar">
         <p style="color: #6C757D; font-size: 0.85rem; margin: 0;">
           Master list of all payables assigned to students.
         </p>
@@ -159,8 +159,7 @@ const handleDelete = async (id: string) => {
           type="text" 
           v-model="searchQuery" 
           placeholder="Search payables or students..." 
-          class="form-input" 
-          style="width: 300px; padding: 8px 12px; font-size: 0.9rem;"
+          class="form-input search-box" 
         />
       </div>
 
@@ -168,43 +167,43 @@ const handleDelete = async (id: string) => {
         No payables assigned yet. Click "Add Payable" to assign one.
       </p>
       
-      <div v-else style="background: white; border-radius: 8px; border: 1px solid #E9ECEF; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <div v-else class="table-card" style="background: white; border-radius: 8px; border: 1px solid #E9ECEF; overflow-x: auto; width: 100%;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead style="background: #F1F3F5; font-size: 0.75rem; text-transform: uppercase; color: #6C757D; letter-spacing: 0.05em; user-select: none;">
             <tr>
-              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer;" @click="setSort('name')">
+              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer; white-space: nowrap;" @click="setSort('name')">
                 Payable Name <span v-if="sortKey==='name'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer;" @click="setSort('student')">
+              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer; white-space: nowrap;" @click="setSort('student')">
                 Student <span v-if="sortKey==='student'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer;" @click="setSort('amount')">
+              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer; white-space: nowrap;" @click="setSort('amount')">
                 Amount <span v-if="sortKey==='amount'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer;" @click="setSort('collected')">
+              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer; white-space: nowrap;" @click="setSort('collected')">
                 Collected <span v-if="sortKey==='collected'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer;" @click="setSort('deadline')">
+              <th style="padding: 16px 24px; font-weight: 600; cursor: pointer; white-space: nowrap;" @click="setSort('deadline')">
                 Deadline <span v-if="sortKey==='deadline'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
               </th>
-              <th style="padding: 16px 24px; font-weight: 600;"></th>
+              <th style="padding: 16px 24px; font-weight: 600; white-space: nowrap;"></th>
             </tr>
           </thead>
           <tbody style="font-size: 0.9rem; color: #495057;">
             <tr v-for="(p, idx) in filteredPayables" :key="p.id" :style="{ borderTop: idx > 0 ? '1px solid #E9ECEF' : 'none' }">
-              <td style="padding: 16px 24px; font-weight: 500; color: #2B3B4E;">{{ p.name }}</td>
-              <td style="padding: 16px 24px; color: #495057;">{{ p.studentName }}</td>
-              <td style="padding: 16px 24px;">{{ peso(p.amount) }}</td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; font-weight: 500; color: #2B3B4E; white-space: nowrap;">{{ p.name }}</td>
+              <td style="padding: 16px 24px; color: #495057; white-space: nowrap;">{{ p.studentName }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">{{ peso(p.amount) }}</td>
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <span style="font-weight: 600; color: #2B3B4E;">{{ peso(p.collected) }}</span>
                 <span style="color: #ADB5BD; font-size: 0.75rem; margin-left: 4px;">({{ Math.round((p.collected/p.amount)*100) }}%)</span>
               </td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <span :style="{ ...getDeadlineInfo(p.deadline).style, padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }">
                   {{ getDeadlineInfo(p.deadline).label }}
                 </span>
               </td>
-              <td style="padding: 16px 24px;">
+              <td style="padding: 16px 24px; white-space: nowrap;">
                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
                   <button v-if="authStore.can('pay') && p.collected < p.amount" @click="handlePay(p)" style="background: #2B3B4E; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">Pay</button>
                   <button v-if="authStore.can('edit')" @click="openEdit(p)" style="background: transparent; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; color: #495057;">Edit</button>
@@ -295,3 +294,51 @@ const handleDelete = async (id: string) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.payables-header {
+  background: white;
+  padding: 24px 32px;
+  border-bottom: 1px solid #E9ECEF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payables-body {
+  padding: 32px;
+}
+
+.payables-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.search-box {
+  width: 300px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .payables-header {
+    padding: 16px 20px;
+  }
+
+  .payables-body {
+    padding: 16px 20px;
+  }
+
+  .payables-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .search-box {
+    width: 100% !important;
+  }
+}
+</style>

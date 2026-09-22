@@ -64,8 +64,8 @@ const handleSave = async (e: Event) => {
 </script>
 
 <template>
-  <div v-if="isOpen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(33, 37, 41, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-    <div class="animate-fade-in" style="background: white; width: 100%; max-width: 480px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column;">
+  <div v-if="isOpen" class="modal-overlay" style="z-index: 1000;">
+    <div class="modal-content animate-scale-in" style="max-width: 480px;">
       <!-- Modal Head -->
       <div style="padding: 24px; border-bottom: 1px solid #E9ECEF; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="font-size: 1.25rem; font-weight: 600; color: #2B3B4E; margin: 0;">Account settings</h3>
