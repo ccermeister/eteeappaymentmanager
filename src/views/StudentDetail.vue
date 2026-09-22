@@ -77,6 +77,7 @@ const handleDeleteStudent = async () => {
 }
 
 const handleAddPayable = async () => {
+  if (!authStore.can('create')) return alert("Permission denied. Viewers cannot add payables.")
   const name = window.prompt("Enter payable name (e.g. Tuition Fee):")
   if (!name) return
   const amountStr = window.prompt("Enter amount:")
@@ -93,6 +94,7 @@ const handleAddPayable = async () => {
 }
 
 const handlePay = async (payable: any) => {
+  if (!authStore.can('pay')) return alert("Permission denied. Viewers cannot record payments.")
   const paidAmt = ledgerStore.payments.filter(p => p.profile_ledger_id === studentId && p.payable_id === payable.id && !p.deleted).reduce((s, p) => s + Number(p.amount), 0)
   const remaining = Math.max(0, payable.amount - paidAmt)
   
@@ -116,6 +118,7 @@ const handlePay = async (payable: any) => {
 }
 
 const handleRequestEdit = async (paymentId: string) => {
+  if (!authStore.can('requestEdit')) return alert("Permission denied. Viewers cannot request edits.")
   const reason = window.prompt("Reason for edit request:")
   if (!reason) return
   try {

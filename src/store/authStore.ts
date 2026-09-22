@@ -8,8 +8,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const role = computed(() => {
     if (!user.value) return null
-    // If the email contains 'admin', they are an admin. Otherwise, they are a treasurer.
-    if (user.value.email?.toLowerCase().includes('admin')) {
+    const email = user.value.email?.toLowerCase() || ''
+    const uid = user.value.id || ''
+    if (uid === 'eb5e85ab-5fb8-482a-b165-7c57bf8f3444' || email === 'viewer@eteeap.com' || email.includes('viewer') || user.value.user_metadata?.role === 'viewer') {
+      return 'viewer'
+    }
+    if (email.includes('admin') || user.value.user_metadata?.role === 'admin') {
       return 'admin'
     }
     return 'treasurer'
@@ -21,12 +25,17 @@ export const useAuthStore = defineStore('auth', () => {
     
     if (currentRole === 'admin') {
       // Admins can do everything except request edits (since they can delete directly)
-      return ['delete', 'approve', 'viewAudit', 'create', 'pay', 'edit'].includes(action)
+      return ['delete', 'approve', 'viewAudit', 'create', 'pay', 'edit', 'view'].includes(action)
+    }
+    
+    if (currentRole === 'viewer') {
+      // Viewers can ONLY view — cannot create, edit, pay, delete, or request edits
+      return ['view'].includes(action)
     }
     
     if (currentRole === 'treasurer') {
       // Treasurers can manage records but must request edits for payments
-      return ['create', 'pay', 'edit', 'requestEdit'].includes(action)
+      return ['create', 'pay', 'edit', 'requestEdit', 'view'].includes(action)
     }
     
     return false
