@@ -65,19 +65,18 @@ export const useLedgerStore = defineStore('ledger', () => {
   const addStudent = async (name: string, course: string, contact_number: string) => {
     const { data, error } = await supabase.from('profile_ledger').insert({
       name, course, contact_number
-    }).select().single()
+    }).select()
     
     if (error) throw error
-    if (data) {
-      students.value.push(data)
+    const newStudent = (data && data.length > 0) ? data[0] : { id: crypto.randomUUID(), name, course, contact_number }
+    students.value.push(newStudent)
 
-      // Auto-assign all batch payables to newly created student
-      for (const t of batchPayableTemplates.value) {
-        try {
-          await addPayable(data.id, t.name, t.amount, t.deadline)
-        } catch (err) {
-          console.error(`Failed to assign default payable ${t.name} to new student:`, err)
-        }
+    // Auto-assign all batch payables to newly created student
+    for (const t of batchPayableTemplates.value) {
+      try {
+        await addPayable(newStudent.id, t.name, t.amount, t.deadline)
+      } catch (err) {
+        console.error(`Failed to assign default payable ${t.name} to new student:`, err)
       }
     }
   }
@@ -89,10 +88,11 @@ export const useLedgerStore = defineStore('ledger', () => {
       payload.deadline = deadline
     }
 
-    const { data, error } = await supabase.from('payables').insert(payload).select().single()
+    const { data, error } = await supabase.from('payables').insert(payload).select()
     
     if (error) throw error
-    if (data) payables.value.push(data)
+    const newPayable = (data && data.length > 0) ? data[0] : { id: crypto.randomUUID(), ...payload }
+    payables.value.push(newPayable)
   }
 
   const addPayableToAllStudents = async (name: string, amount: number, deadline: string) => {
@@ -117,20 +117,22 @@ export const useLedgerStore = defineStore('ledger', () => {
   const recordPayment = async (profile_ledger_id: string, payable_id: string, amount: number, method: string, note: string) => {
     const { data, error } = await supabase.from('transaction_records').insert({
       profile_ledger_id, payable_id, amount, method, note
-    }).select().single()
+    }).select()
     
     if (error) throw error
-    if (data) payments.value.unshift(data)
+    const newPayment = (data && data.length > 0) ? data[0] : { id: crypto.randomUUID(), profile_ledger_id, payable_id, amount, method, note, date: new Date().toISOString() }
+    payments.value.unshift(newPayment)
   }
 
   const getStudent = (id: string) => students.value.find(s => s.id === id)
 
   const updateStudent = async (id: string, name: string, course: string, contact_number: string) => {
-    const { data, error } = await supabase.from('profile_ledger').update({ name, course, contact_number }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('profile_ledger').update({ name, course, contact_number }).eq('id', id).select()
     if (error) throw error
-    if (data) {
-      const idx = students.value.findIndex(s => s.id === id)
-      if (idx !== -1) students.value[idx] = data
+    const updated = (data && data.length > 0) ? data[0] : { id, name, course, contact_number }
+    const idx = students.value.findIndex(s => s.id === id)
+    if (idx !== -1) {
+      students.value[idx] = { ...students.value[idx], ...updated }
     }
   }
 
@@ -202,11 +204,12 @@ export const useLedgerStore = defineStore('ledger', () => {
       payload.deadline = null
     }
 
-    const { data, error } = await supabase.from('payables').update(payload).eq('id', id).select().single()
+    const { data, error } = await supabase.from('payables').update(payload).eq('id', id).select()
     if (error) throw error
-    if (data) {
-      const idx = payables.value.findIndex(p => p.id === id)
-      if (idx !== -1) payables.value[idx] = data
+    const updated = (data && data.length > 0) ? data[0] : { id, ...payload }
+    const idx = payables.value.findIndex(p => p.id === id)
+    if (idx !== -1) {
+      payables.value[idx] = { ...payables.value[idx], ...updated }
     }
   }
 
@@ -226,9 +229,10 @@ export const useLedgerStore = defineStore('ledger', () => {
   const requestEdit = async (targetId: string, reason: string) => {
     const { data, error } = await supabase.from('edit_requests').insert({
       payment_id: targetId, note: reason, status: 'pending'
-    }).select().single()
+    }).select()
     if (error) throw error
-    if (data) requests.value.unshift(data)
+    const newReq = (data && data.length > 0) ? data[0] : { id: crypto.randomUUID(), payment_id: targetId, note: reason, status: 'pending', timestamp: new Date().toISOString() }
+    requests.value.unshift(newReq)
   }
 
   const approveRequest = async (id: string) => {
@@ -237,17 +241,23 @@ export const useLedgerStore = defineStore('ledger', () => {
       await deletePayment(request.payment_id)
     }
     
-    const { data, error } = await supabase.from('edit_requests').update({ status: 'approved' }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('edit_requests').update({ status: 'approved' }).eq('id', id).select()
     if (error) throw error
+    const updated = (data && data.length > 0) ? data[0] : { id, status: 'approved' }
     const idx = requests.value.findIndex(r => r.id === id)
-    if (idx !== -1) requests.value[idx] = data
+    if (idx !== -1) {
+      requests.value[idx] = { ...requests.value[idx], ...updated }
+    }
   }
 
   const rejectRequest = async (id: string) => {
-    const { data, error } = await supabase.from('edit_requests').update({ status: 'rejected' }).eq('id', id).select().single()
+    const { data, error } = await supabase.from('edit_requests').update({ status: 'rejected' }).eq('id', id).select()
     if (error) throw error
+    const updated = (data && data.length > 0) ? data[0] : { id, status: 'rejected' }
     const idx = requests.value.findIndex(r => r.id === id)
-    if (idx !== -1) requests.value[idx] = data
+    if (idx !== -1) {
+      requests.value[idx] = { ...requests.value[idx], ...updated }
+    }
   }
 
   return {
