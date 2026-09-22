@@ -69,7 +69,11 @@ const handleAddPayable = async () => {
   
   submitting.value = true
   try {
-    await ledgerStore.addPayable(form.value.student_id, form.value.name, Number(form.value.amount), form.value.deadline)
+    if (form.value.student_id === 'ALL_STUDENTS') {
+      await ledgerStore.addPayableToAllStudents(form.value.name.trim(), Number(form.value.amount), form.value.deadline)
+    } else {
+      await ledgerStore.addPayable(form.value.student_id, form.value.name.trim(), Number(form.value.amount), form.value.deadline)
+    }
     showAddModal.value = false
     form.value = { student_id: '', name: '', amount: '', deadline: '' }
   } catch (error: any) {
@@ -230,6 +234,9 @@ const handleDelete = async (id: string) => {
             <label class="form-label">Select Student</label>
             <select v-model="form.student_id" class="form-input" style="appearance: auto;">
               <option value="" disabled>-- Choose a student --</option>
+              <option value="ALL_STUDENTS" style="font-weight: 600; color: #2B3B4E;">
+                All Students (Current & Future)
+              </option>
               <option v-for="student in ledgerStore.students" :key="student.id" :value="student.id">
                 {{ student.name }} ({{ student.course }})
               </option>

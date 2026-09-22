@@ -9,7 +9,21 @@ export const useLedgerStore = defineStore('ledger', () => {
   const auditLogs = ref<any[]>([])
   const requests = ref<any[]>([])
 
+  const batchPayableTemplates = ref<Array<{ name: string; amount: number; deadline: string }>>([])
+
+  const loadBatchTemplates = () => {
+    try {
+      const saved = localStorage.getItem('eteeap_batch_payables')
+      if (saved) {
+        batchPayableTemplates.value = JSON.parse(saved)
+      }
+    } catch (e) {
+      console.error('Error loading batch payable templates:', e)
+    }
+  }
+
   const fetchLedgerData = async () => {
+    loadBatchTemplates()
     const [studentsRes, payablesRes, paymentsRes, requestsRes, auditRes] = await Promise.all([
       supabase.from('profile_ledger').select('*').order('name'),
       supabase.from('payables').select('*'),
@@ -54,7 +68,18 @@ export const useLedgerStore = defineStore('ledger', () => {
     }).select().single()
     
     if (error) throw error
-    if (data) students.value.push(data)
+    if (data) {
+      students.value.push(data)
+
+      // Auto-assign all batch payables to newly created student
+      for (const t of batchPayableTemplates.value) {
+        try {
+          await addPayable(data.id, t.name, t.amount, t.deadline)
+        } catch (err) {
+          console.error(`Failed to assign default payable ${t.name} to new student:`, err)
+        }
+      }
+    }
   }
 
   const addPayable = async (profile_ledger_id: string, name: string, amount: number, deadline: string) => {
@@ -68,6 +93,25 @@ export const useLedgerStore = defineStore('ledger', () => {
     
     if (error) throw error
     if (data) payables.value.push(data)
+  }
+
+  const addPayableToAllStudents = async (name: string, amount: number, deadline: string) => {
+    // 1. Save template for current and future students
+    const existingIdx = batchPayableTemplates.value.findIndex(t => t.name.toLowerCase() === name.toLowerCase())
+    if (existingIdx !== -1) {
+      batchPayableTemplates.value[existingIdx] = { name, amount, deadline }
+    } else {
+      batchPayableTemplates.value.push({ name, amount, deadline })
+    }
+    localStorage.setItem('eteeap_batch_payables', JSON.stringify(batchPayableTemplates.value))
+
+    // 2. Assign to all current students
+    for (const student of students.value) {
+      const alreadyHas = payables.value.some(p => p.profile_ledger_id === student.id && p.name.toLowerCase() === name.toLowerCase())
+      if (!alreadyHas) {
+        await addPayable(student.id, name, amount, deadline)
+      }
+    }
   }
 
   const recordPayment = async (profile_ledger_id: string, payable_id: string, amount: number, method: string, note: string) => {
@@ -207,9 +251,9 @@ export const useLedgerStore = defineStore('ledger', () => {
   }
 
   return {
-    students, payables, payments, auditLogs, requests, editRequests: requests,
+    students, payables, payments, auditLogs, requests, editRequests: requests, batchPayableTemplates,
     fetchLedgerData, studentTotalPaid, studentTotalDue, studentPayables, studentPayments,
-    addStudent, addPayable, recordPayment, getStudent,
+    addStudent, addPayable, addPayableToAllStudents, recordPayment, getStudent,
     deletePayable, updatePayable, updateStudent, deleteStudent, deletePayment,
     approveRequest, rejectRequest, requestEdit
   }
