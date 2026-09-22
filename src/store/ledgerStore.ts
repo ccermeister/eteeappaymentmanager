@@ -91,15 +91,63 @@ export const useLedgerStore = defineStore('ledger', () => {
   }
 
   const deleteStudent = async (id: string) => {
+    // 1. Find all payables belonging to this student
+    const studentPayableList = payables.value.filter(p => p.profile_ledger_id === id || p.student_id === id)
+    const payableIds = studentPayableList.map(p => p.id)
+
+    // 2. Find all payments for this student or student's payables
+    const studentPaymentList = payments.value.filter(p => p.profile_ledger_id === id || payableIds.includes(p.payable_id))
+    const paymentIds = studentPaymentList.map(p => p.id)
+
+    // 3. Delete edit requests in Supabase
+    if (paymentIds.length > 0) {
+      await supabase.from('edit_requests').delete().in('payment_id', paymentIds)
+    }
+
+    // 4. Delete transaction records (payments) in Supabase
+    if (paymentIds.length > 0) {
+      await supabase.from('transaction_records').delete().in('id', paymentIds)
+    }
+    await supabase.from('transaction_records').delete().eq('profile_ledger_id', id)
+
+    // 5. Delete payables in Supabase
+    if (payableIds.length > 0) {
+      await supabase.from('payables').delete().in('id', payableIds)
+    }
+    await supabase.from('payables').delete().eq('profile_ledger_id', id)
+
+    // 6. Delete student from profile_ledger in Supabase
     const { error } = await supabase.from('profile_ledger').delete().eq('id', id)
     if (error) throw error
+
+    // 7. Update local reactive store
     students.value = students.value.filter(s => s.id !== id)
+    payables.value = payables.value.filter(p => p.profile_ledger_id !== id && p.student_id !== id)
+    payments.value = payments.value.filter(p => p.profile_ledger_id !== id && !payableIds.includes(p.payable_id))
+    requests.value = requests.value.filter(r => !paymentIds.includes(r.payment_id))
   }
 
   const deletePayable = async (id: string) => {
+    // 1. Find payments associated with this payable
+    const payablePayments = payments.value.filter(p => p.payable_id === id)
+    const paymentIds = payablePayments.map(p => p.id)
+
+    // 2. Delete edit requests for these payments in Supabase
+    if (paymentIds.length > 0) {
+      await supabase.from('edit_requests').delete().in('payment_id', paymentIds)
+    }
+
+    // 3. Delete transaction records in Supabase
+    await supabase.from('transaction_records').delete().eq('payable_id', id)
+
+    // 4. Delete payable in Supabase
     const { error } = await supabase.from('payables').delete().eq('id', id)
     if (error) throw error
+
+    // 5. Update local store
     payables.value = payables.value.filter(p => p.id !== id)
+    payments.value = payments.value.filter(p => p.payable_id !== id)
+    requests.value = requests.value.filter(r => !paymentIds.includes(r.payment_id))
   }
 
   const updatePayable = async (id: string, name: string, amount: number, deadline: string) => {
@@ -119,9 +167,16 @@ export const useLedgerStore = defineStore('ledger', () => {
   }
 
   const deletePayment = async (id: string) => {
+    // 1. Delete associated edit requests in Supabase
+    await supabase.from('edit_requests').delete().eq('payment_id', id)
+
+    // 2. Delete transaction record in Supabase
     const { error } = await supabase.from('transaction_records').delete().eq('id', id)
     if (error) throw error
+
+    // 3. Update local store
     payments.value = payments.value.filter(p => p.id !== id)
+    requests.value = requests.value.filter(r => r.payment_id !== id)
   }
 
   const requestEdit = async (targetId: string, reason: string) => {
