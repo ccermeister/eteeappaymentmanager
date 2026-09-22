@@ -27,6 +27,55 @@ const payments = computed(() =>
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 )
 
+// Edit Student Modal state
+const showEditStudentModal = ref(false)
+const editStudentForm = ref({ name: '', course: '', contact_number: '' })
+const savingEdit = ref(false)
+
+const handleOpenEditModal = () => {
+  if (!student.value) return
+  editStudentForm.value = {
+    name: student.value.name || '',
+    course: student.value.course || '',
+    contact_number: student.value.contact_number || ''
+  }
+  showEditStudentModal.value = true
+}
+
+const handleSaveEditStudent = async (e: Event) => {
+  e.preventDefault()
+  if (!student.value) return
+  savingEdit.value = true
+  try {
+    await ledgerStore.updateStudent(
+      studentId,
+      editStudentForm.value.name.trim(),
+      editStudentForm.value.course.trim(),
+      editStudentForm.value.contact_number.trim()
+    )
+    showEditStudentModal.value = false
+  } catch (error: any) {
+    alert("Failed to update student: " + (error.message || 'Unknown error'))
+  } finally {
+    savingEdit.value = false
+  }
+}
+
+const handleDeleteStudent = async () => {
+  if (!student.value) return
+  if (!authStore.can('delete')) return alert("Permission denied. Only admins can delete students.")
+  
+  const confirmed = window.confirm(`Are you sure you want to delete ${student.value.name}? This will remove the student record and all associated payables/payments.`)
+  if (!confirmed) return
+  
+  try {
+    await ledgerStore.deleteStudent(studentId)
+    router.push('/students')
+  } catch (error: any) {
+    alert("Failed to delete student: " + (error.message || 'Unknown error'))
+  }
+}
+
 const handleAddPayable = async () => {
   const name = window.prompt("Enter payable name (e.g. Tuition Fee):")
   if (!name) return
@@ -74,6 +123,17 @@ const handleRequestEdit = async (paymentId: string) => {
     alert("Edit request submitted to Admin.")
   } catch (error: any) {
     alert("Failed to request edit: " + (error.message || 'Unknown error'))
+  }
+}
+
+const handleDeletePayment = async (paymentId: string) => {
+  if (!authStore.can('delete')) return alert("Permission denied. Only admins can delete payments.")
+  const confirmed = window.confirm("Are you sure you want to delete this payment record?")
+  if (!confirmed) return
+  try {
+    await ledgerStore.deletePayment(paymentId)
+  } catch (error: any) {
+    alert("Failed to delete payment: " + (error.message || 'Unknown error'))
   }
 }
 
@@ -147,8 +207,8 @@ const printHistory = () => {
         
         <div style="display: flex; gap: 8px;">
           <button v-if="activeTab === 'history'" @click="printHistory" style="background: white; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #495057;">Print PDF</button>
-          <button v-if="authStore.can('edit')" style="background: white; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #495057;">Edit profile</button>
-          <button v-if="authStore.can('delete')" style="background: #FFF5F5; border: 1px solid #FFC9C9; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #E03131;">Delete</button>
+          <button v-if="authStore.can('edit')" @click="handleOpenEditModal" style="background: white; border: 1px solid #DEE2E6; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #495057;">Edit profile</button>
+          <button v-if="authStore.can('delete')" @click="handleDeleteStudent" style="background: #FFF5F5; border: 1px solid #FFC9C9; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: #E03131;">Delete</button>
         </div>
       </div>
 
@@ -258,8 +318,7 @@ const printHistory = () => {
               <td style="padding: 16px 24px;">{{ p.note || '—' }}</td>
               <td style="padding: 16px 24px;">
                 <div v-if="authStore.can('delete')" style="display: flex; gap: 8px;">
-                  <button style="background: transparent; border: 1px solid #DEE2E6; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Edit</button>
-                  <button style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Del</button>
+                  <button @click="handleDeletePayment(p.id)" style="background: #FFF5F5; border: 1px solid #FFC9C9; color: #E03131; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Del</button>
                 </div>
                 <template v-else-if="authStore.can('requestEdit')">
                   <span v-if="ledgerStore.editRequests.find(r => r.payment_id === p.id && r.status === 'pending')" style="font-size: 0.75rem; color: #ADB5BD;">Edit requested</span>
@@ -272,6 +331,38 @@ const printHistory = () => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div v-if="showEditStudentModal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(33, 37, 41, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+      <div style="background: white; width: 100%; max-width: 480px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 20px 24px; border-bottom: 1px solid #E9ECEF; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 1.25rem; font-weight: 600; color: #2B3B4E; margin: 0;">Edit student profile</h3>
+          <button @click="showEditStudentModal = false" style="background: none; border: none; font-size: 1.25rem; color: #ADB5BD; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form @submit="handleSaveEditStudent" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #495057; margin-bottom: 6px;">Full name</label>
+            <input required v-model="editStudentForm.name" type="text" style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #495057; margin-bottom: 6px;">Course (Program)</label>
+            <input v-model="editStudentForm.course" type="text" style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;" placeholder="e.g. BSIT" />
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #495057; margin-bottom: 6px;">Contact number</label>
+            <input v-model="editStudentForm.contact_number" type="text" style="width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #DEE2E6; font-size: 0.95rem; outline: none;" placeholder="e.g. 09123456789" />
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px;">
+            <button type="button" @click="showEditStudentModal = false" style="background: white; border: 1px solid #DEE2E6; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; color: #495057; cursor: pointer;">Cancel</button>
+            <button type="submit" :disabled="savingEdit" style="background: #2B3B4E; border: none; color: white; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer;">
+              {{ savingEdit ? 'Saving...' : 'Save changes' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
